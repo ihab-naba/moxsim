@@ -2,203 +2,195 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Pro - AI Fusion Edition</title>
+    <title>MoxSim Pro - Mirror Battle Edition</title>
     <style>
         :root { 
-            --bg-mox: #17191a; --panel-mox: #1f2122; --accent: #00a2ff; 
-            --cpu: #ff4757; --stack-gold: #ffd700; --card-w: 90px;
+            --bg: #121212; --panel: #1c1c1c; --accent: #3b82f6; 
+            --cpu-red: #ef4444; --mox-orange: #e67e22; --mox-blue: #3498db;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg-mox); font-family: 'Inter', sans-serif; color: #eee; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', Roboto, sans-serif; color: white; overflow: hidden; }
 
-        /* HEADER STILE MOXFIELD */
-        #header { 
-            height: 50px; background: #000; display: flex; align-items: center; 
-            padding: 0 20px; gap: 15px; border-bottom: 1px solid #333; z-index: 100;
-        }
-        input { background: #111; border: 1px solid #444; color: white; padding: 6px 12px; border-radius: 4px; flex: 1; font-size: 13px; }
-        .btn-mox { background: var(--accent); color: white; border: none; padding: 6px 15px; border-radius: 4px; font-weight: 600; cursor: pointer; }
+        /* HEADER */
+        #top-bar { height: 45px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 1px solid #333; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 5px 10px; border-radius: 4px; flex: 1; font-size: 12px; }
+        .start-btn { background: #007bff; border: none; color: white; padding: 6px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* LAYOUT A TRE COLONNE */
-        #main-container { display: grid; grid-template-columns: 140px 1fr 200px; height: calc(100vh - 50px); }
+        /* PLAY AREA */
+        #tabletop { height: calc(100vh - 45px); display: flex; flex-direction: column; }
+        
+        .player-area { flex: 1; display: grid; grid-template-columns: 1fr 280px; position: relative; }
+        .cpu-area { border-bottom: 2px solid #333; background: rgba(255,0,0,0.02); }
+        .user-area { background: rgba(0,123,255,0.02); }
 
-        /* COLONNE LATERALI */
-        .sidebar { background: var(--panel-mox); display: flex; flex-direction: column; justify-content: space-between; padding: 10px; border-left: 1px solid #333; border-right: 1px solid #333; }
-        .zone-box { width: 100%; aspect-ratio: 2.5/3.5; border: 1px solid #3a3a3a; border-radius: 6px; position: relative; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); margin-bottom: 10px; }
-        .zone-label { position: absolute; font-size: 10px; font-weight: bold; color: #555; text-transform: uppercase; bottom: 5px; }
+        /* CARD SLOTS & FIELD */
+        .field { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; gap: 15px; }
+        .card-row { display: flex; gap: 12px; min-height: 140px; width: 100%; justify-content: center; }
 
-        /* CAMPO DI BATTAGLIA */
-        #battlefield { display: flex; flex-direction: column; background: #121212; position: relative; }
-        .field-half { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.03); }
-        .card-row { display: flex; gap: 10px; width: 95%; min-height: 130px; justify-content: center; align-items: center; }
+        /* SIDEBAR CONTROLS (STILE MOXFIELD) */
+        .sidebar { background: var(--panel); border-left: 1px solid #333; padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+        .zones-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+        .small-slot { width: 60px; height: 84px; border: 1px solid #444; border-radius: 4px; position: relative; background: #111; display: flex; align-items: center; justify-content: center; }
+        .slot-label { position: absolute; bottom: 2px; font-size: 8px; color: #666; text-transform: uppercase; width: 100%; text-align: center; }
+        
+        /* LIFE & COUNTERS */
+        .life-box { padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; font-size: 20px; border: 1px solid #444; margin: 5px 0; }
+        
+        /* BUTTONS */
+        .mox-btn { width: 100%; padding: 10px; border-radius: 20px; border: none; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        .btn-orange { background: var(--mox-orange); }
+        .btn-blue { background: var(--mox-blue); margin-top: auto; }
+        .btn-ai { background: var(--cpu-red); }
 
-        /* CARTE E EFFETTO ZOOM (Equilibrato) */
-        .card-container { width: var(--card-w); aspect-ratio: 2.5/3.5; position: relative; cursor: grab; transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1); }
-        .card-container:hover { transform: scale(2.2); z-index: 1000 !important; box-shadow: 0 10px 20px rgba(0,0,0,0.6); }
-        .card-img { width: 100%; height: 100%; border-radius: 6px; border: 1px solid #000; pointer-events: none; }
-        .playable { box-shadow: 0 0 10px var(--accent); }
+        /* CARTE & ZOOM */
+        .card { width: 100px; aspect-ratio: 2.5/3.5; border-radius: 6px; transition: transform 0.25s ease; cursor: grab; position: relative; }
+        .card:hover { transform: scale(2.5) translateY(20%); z-index: 1000; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .cpu-area .card:hover { transform: scale(2.5) translateY(-20%); } /* Zoom verso il basso per CPU */
+        .card img { width: 100%; height: 100%; border-radius: 6px; }
         .tapped { transform: rotate(90deg) !important; }
 
-        /* STACK & CONTROLLI AI */
-        #stack-zone { width: 100px; height: 140px; border: 2px solid var(--stack-gold); border-radius: 8px; margin: 20px auto; display: flex; align-items: center; justify-content: center; position: relative; background: rgba(255, 215, 0, 0.05); }
-        #stack-zone::before { content: 'STACK'; position: absolute; top: -18px; color: var(--stack-gold); font-size: 11px; font-weight: bold; }
-        
-        .life-counter { font-size: 24px; font-weight: bold; text-align: center; padding: 10px; background: #111; border-radius: 6px; border: 1px solid #333; margin: 5px 0; }
-
-        /* FOOTER & FASI */
-        #footer-ui { position: fixed; bottom: 0; width: 100%; height: 60px; background: rgba(0,0,0,0.8); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-sizing: border-box; border-top: 1px solid #444; z-index: 2000; }
-        .hand-area { display: flex; gap: -20px; justify-content: center; align-items: center; }
-        .hand-area .card-container { margin-left: -40px; }
-        .hand-area .card-container:first-child { margin-left: 0; }
-
-        .phase-display { background: #2a2a2a; padding: 8px 20px; border-radius: 20px; font-weight: bold; border: 1px solid #444; cursor: pointer; min-width: 180px; text-align: center; }
-        .action-btn { background: var(--cpu); color: white; border: none; padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        /* STACK */
+        #the-stack { 
+            position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+            width: 120px; height: 160px; border: 2px dashed #ffd700; border-radius: 10px;
+            z-index: 500; display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.4); pointer-events: none; opacity: 0; transition: 0.3s;
+        }
+        #the-stack.active { opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div style="font-weight: 900; color: var(--accent); letter-spacing: 1px;">MOXSIM ARENA</div>
-    <input type="text" id="pUrl" placeholder="Player Deck URL">
-    <input type="text" id="cUrl" placeholder="AI Deck URL">
-    <button class="btn-mox" onclick="startGame()">START BATTLE</button>
+<div id="top-bar">
+    <div style="font-weight: bold; color: var(--accent);">MOXSIM MIRROR</div>
+    <input type="text" id="pUrl" placeholder="Player URL">
+    <input type="text" id="cUrl" placeholder="AI URL">
+    <button class="start-btn" onclick="initGame()">CARICA BATTAGLIA</button>
 </div>
 
-<div id="main-container">
-    <div class="sidebar">
-        <div class="zone-group">
-            <div class="zone-box"><span class="zone-label">Exile</span></div>
-            <div class="zone-box"><span class="zone-label">Graveyard</span></div>
-        </div>
-        <div class="zone-group">
-            <div class="zone-box" id="p-cmd"><span class="zone-label">Commander</span></div>
-            <div class="zone-box" onclick="drawCard('p')" style="cursor:pointer">
-                <img src="https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg" style="width:100%; height:100%; border-radius:5px; opacity:0.8;">
-                <div id="p-deck-count" style="position:absolute; font-size:20px; font-weight:bold;">0</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="battlefield">
-        <div class="field-half">
+<div id="tabletop">
+    <div class="player-area cpu-area">
+        <div class="field">
             <div class="card-row" id="c-lands"></div>
             <div class="card-row" id="c-creatures"></div>
         </div>
-        <div class="field-half">
+        <div class="sidebar">
+            <div class="zones-row">
+                <div class="small-slot"><span class="slot-label">Lib</span><div id="c-lib-num" style="font-weight:bold">0</div></div>
+                <div class="small-slot" id="c-cmd-zone"><span class="slot-label">Cmd</span></div>
+            </div>
+            <div class="life-box" style="color:var(--cpu-red)">CPU: 40</div>
+            <button class="mox-btn btn-ai" onclick="aiAction()">AI MOVE</button>
+            <div class="zones-row" style="margin-top:auto">
+                <div class="small-slot"><span class="slot-label">Grave</span></div>
+                <div class="small-slot"><span class="slot-label">Exile</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="player-area user-area">
+        <div class="field">
             <div class="card-row" id="p-creatures"></div>
             <div class="card-row" id="p-lands"></div>
         </div>
-    </div>
-
-    <div class="sidebar">
-        <div class="zone-group">
-            <div class="life-counter" style="color:var(--cpu)" id="c-life">40</div>
-            <div class="zone-box">
-                <img src="https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg" style="width:100%; height:100%; border-radius:5px; opacity:0.8;">
-                <div id="c-deck-count" style="position:absolute; font-size:20px; font-weight:bold;">0</div>
+        <div class="sidebar">
+            <div class="zones-row">
+                <div class="small-slot"><span class="slot-label">Exile</span></div>
+                <div class="small-slot"><span class="slot-label">Grave</span></div>
             </div>
-            <div class="zone-box" id="c-cmd"><span class="zone-label">Commander</span></div>
-        </div>
-
-        <div id="stack-zone"></div>
-
-        <div class="zone-group">
-            <button class="action-btn" onclick="aiLogic()">AI ACTION</button>
-            <div class="zone-box"><span class="zone-label">Graveyard</span></div>
-            <div class="life-counter" style="color:var(--accent)" id="p-life">40</div>
+            <div class="life-box" style="color:var(--mox-blue)">YOU: 40</div>
+            <button class="mox-btn btn-orange" onclick="draw('p')">DRAW CARD</button>
+            <div class="zones-row" style="margin-top:10px">
+                <div class="small-slot" id="p-cmd-zone"><span class="slot-label">Cmd</span></div>
+                <div class="small-slot"><span class="slot-label">Lib</span><div id="p-lib-num" style="font-weight:bold">0</div></div>
+            </div>
+            <button class="mox-btn btn-blue" id="phase-btn" onclick="nextPhase()">FASE: Iniziale</button>
         </div>
     </div>
 </div>
 
-<div id="footer-ui">
-    <button class="btn-mox" onclick="drawCard('p')">DRAW</button>
-    <div class="hand-area" id="p-hand"></div>
-    <div class="phase-display" onclick="advancePhase()" id="phase-txt">FASE: Iniziale</div>
-</div>
+<div id="the-stack"></div>
 
 <script>
     let decks = { p: [], c: [] };
-    const phases = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Principale 1", "Inizio Combattimento", "Attaccanti", "Bloccanti", "Danno", "Fine Combattimento", "Principale 2", "Fase Finale"];
-    let currentPhase = 0;
+    const phaseList = [
+        "Iniziale", "STAP", "Mantenimento", "Acquisizione", 
+        "Principale 1", "Inizio Combattimento", "Dichiarazione Attaccanti", 
+        "Dichiarazione Bloccanti", "Assegnazione Danno", "Fine Combattimento", 
+        "Principale 2", "Fase Finale", "Sottofase Finale"
+    ];
+    let currentPhaseIdx = 0;
 
-    async function startGame() {
-        // Reset totale
-        document.querySelectorAll('.card-row, .hand-area').forEach(z => z.innerHTML = '');
-        decks = { p: [], c: [] };
-
-        const pData = await fetchMox(document.getElementById('pUrl').value);
-        const cData = await fetchMox(document.getElementById('cUrl').value);
-
-        decks.p = shuffle(pData.cards);
-        decks.c = shuffle(cData.cards);
-
-        if(pData.commander) createCard(pData.commander, 'p-cmd');
-        if(cData.commander) createCard(cData.commander, 'c-cmd');
-
-        for(let i=0; i<7; i++) drawCard('p');
-        updateUI();
+    async function initGame() {
+        document.querySelectorAll('.card-row').forEach(r => r.innerHTML = '');
+        const pData = await fetchDeck(document.getElementById('pUrl').value);
+        const cData = await fetchDeck(document.getElementById('cUrl').value);
+        
+        decks.p = pData.main; decks.c = cData.main;
+        if(pData.cmdr) spawnCard(pData.cmdr, 'p-cmd-zone');
+        if(cData.cmdr) spawnCard(cData.cmdr, 'c-cmd-zone');
+        
+        for(let i=0; i<7; i++) draw('p');
+        updateCounters();
     }
 
-    async function fetchMox(url) {
+    async function fetchDeck(url) {
         const id = url.split('/decks/')[1]?.split('?')[0];
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`);
-        const data = await res.json();
-        let cards = [];
-        Object.values(data.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) cards.push(c.card.name); });
-        return { cards, commander: data.commanders ? Object.values(data.commanders)[0].card.name : null };
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(res => res.json());
+        let main = [];
+        Object.values(r.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) main.push(c.card.name); });
+        return { main: main.sort(() => Math.random() - 0.5), cmdr: r.commanders ? Object.values(r.commanders)[0].card.name : null };
     }
 
-    function createCard(name, zoneId) {
-        const container = document.createElement('div');
-        container.className = 'card-container';
-        container.draggable = true;
-        container.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image" class="card-img">`;
-        
-        container.ondblclick = () => container.classList.toggle('tapped');
-        container.ondragstart = () => container.classList.add('dragging');
-        container.ondragend = () => container.classList.remove('dragging');
-        
-        document.getElementById(zoneId).appendChild(container);
-        return container;
+    function spawnCard(name, zoneId) {
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.draggable = true;
+        div.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
+        div.ondblclick = () => div.classList.toggle('tapped');
+        div.ondragstart = () => div.classList.add('dragging');
+        div.ondragend = () => div.classList.remove('dragging');
+        document.getElementById(zoneId).appendChild(div);
+        return div;
     }
 
-    function drawCard(who) {
+    function draw(who) {
         if(decks[who].length > 0) {
-            const name = decks[who].pop();
-            const card = createCard(name, who === 'p' ? 'p-hand' : 'c-creatures');
-            if(who === 'p') card.classList.add('playable');
-            updateUI();
+            spawnCard(decks[who].pop(), who === 'p' ? 'p-creatures' : 'c-creatures');
+            updateCounters();
         }
     }
 
-    function aiLogic() {
+    function aiAction() {
         if(decks.c.length === 0) return;
+        const stack = document.getElementById('the-stack');
         const name = decks.c.pop();
-        const card = createCard(name, 'stack-zone');
+        stack.classList.add('active');
+        const c = spawnCard(name, 'the-stack');
+        
         setTimeout(() => {
-            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("island") || name.toLowerCase().includes("swamp");
-            document.getElementById(isLand ? 'c-lands' : 'c-creatures').appendChild(card);
-            updateUI();
-        }, 1000);
+            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("swamp") || name.toLowerCase().includes("island");
+            document.getElementById(isLand ? 'c-lands' : 'c-creatures').appendChild(c);
+            stack.classList.remove('active');
+            updateCounters();
+        }, 1200);
     }
 
-    function advancePhase() {
-        currentPhase = (currentPhase + 1) % phases.length;
-        document.getElementById('phase-txt').innerText = "FASE: " + phases[currentPhase];
+    function nextPhase() {
+        currentPhaseIdx = (currentPhaseIdx + 1) % phaseList.length;
+        document.getElementById('phase-btn').innerText = "FASE: " + phaseList[currentPhaseIdx];
+        if(currentPhaseIdx === 1) document.querySelectorAll('.tapped').forEach(c => c.classList.remove('tapped'));
     }
 
-    function updateUI() {
-        document.getElementById('p-deck-count').innerText = decks.p.length;
-        document.getElementById('c-deck-count').innerText = decks.c.length;
+    function updateCounters() {
+        document.getElementById('p-lib-num').innerText = decks.p.length;
+        document.getElementById('c-lib-num').innerText = decks.c.length;
     }
 
-    function shuffle(a) { return a.sort(() => Math.random() - 0.5); }
-
-    // Logica Drag & Drop Magnetica
-    document.querySelectorAll('.card-row, .zone-box, .hand-area, #stack-zone').forEach(zone => {
-        zone.ondragover = (e) => e.preventDefault();
-        zone.ondrop = (e) => {
-            const dragged = document.querySelector('.dragging');
-            if(dragged) zone.appendChild(dragged);
+    document.querySelectorAll('.card-row, .small-slot').forEach(z => {
+        z.ondragover = e => e.preventDefault();
+        z.ondrop = () => {
+            const d = document.querySelector('.dragging');
+            if(d) z.appendChild(d);
         };
     });
 </script>
