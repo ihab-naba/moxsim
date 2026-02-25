@@ -108,7 +108,21 @@
         document.getElementById('graveyard').innerHTML = '<div style="font-size:10px; color:#aaa">GRAVEYARD</div>';
     }
 
-    function mulligan() { if(confirm("Rimescolare tutto nel mazzo?")) resetGame(); }
+    function mulligan()
+    function nextTurn() {
+        // 1. Stappa tutto (Untap)
+        const cards = document.querySelectorAll('.card-wrapper');
+        cards.forEach(c => c.classList.remove('tapped'));
+        
+        // 2. Pesca automaticamente (Draw)
+        drawCard();
+        
+        // 3. Feedback visivo
+        const field = document.getElementById('player-field');
+        field.style.boxShadow = "inset 0 0 50px var(--accent)";
+        setTimeout(() => field.style.boxShadow = "none", 500);
+    }
+    { if(confirm("Rimescolare tutto nel mazzo?")) resetGame(); }
 
     function drawCard() {
         if(deck.length === 0) return;
