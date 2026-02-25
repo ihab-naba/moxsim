@@ -2,199 +2,205 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Mirror Pro - Tactical Layout</title>
+    <title>MoxSim Mirror 4.0 - Perfect Layout</title>
     <style>
         :root { 
-            --bg: #0d0d0d; --panel: #161616; --mox-blue: #3498db; --mox-orange: #e67e22; --mox-red: #e74c3c;
-            --card-w: 85px; --card-h: 119px;
+            --bg: #0a0a0a; --border: #222; --accent-blue: #3498db; 
+            --accent-orange: #e67e22; --accent-red: #ff4757;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Inter', sans-serif; color: white; overflow: hidden; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; overflow: hidden; }
 
         /* HEADER */
-        #header { height: 50px; background: #000; display: flex; align-items: center; padding: 0 20px; gap: 15px; border-bottom: 1px solid #333; }
-        input { background: #1a1a1a; border: 1px solid #444; color: white; padding: 8px; border-radius: 4px; flex: 1; font-size: 13px; }
-        .btn-main { background: var(--mox-blue); color: white; border: none; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        #top-bar { height: 45px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 1px solid #333; }
+        input { background: #111; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; flex: 1; font-size: 12px; }
+        .btn-load { background: #007bff; border: none; color: white; padding: 6px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* GRID LAYOUT */
-        #main-grid { display: grid; grid-template-columns: 1fr 300px; height: calc(100vh - 50px); }
+        /* MAIN LAYOUT SEGUENDO UGVIY.PNG */
+        #game-container { display: grid; grid-template-columns: 1fr 280px; height: calc(100vh - 45px); }
 
-        /* FIELD & ZONES */
-        #battlefield { display: grid; grid-template-rows: 1fr 1fr; border-right: 1px solid #333; position: relative; }
-        .field-side { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; padding: 10px; position: relative; }
-        .drop-zone { border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px; padding: 10px; position: relative; }
-        .drop-zone::after { content: attr(data-label); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.05); font-size: 24px; font-weight: 900; pointer-events: none; text-transform: uppercase; }
+        /* AREA DI GIOCO */
+        #play-area { display: grid; grid-template-rows: 1fr 1fr; border-right: 1px solid #333; }
 
-        /* MANO IN BASSO A SINISTRA */
-        #p-hand-zone { position: absolute; bottom: 10px; left: 10px; width: 350px; height: 140px; background: rgba(0,0,0,0.4); border: 1px dashed #444; border-radius: 8px; z-index: 100; display: flex; padding: 5px; gap: -30px; }
-        #p-hand-zone:hover { gap: 5px; width: auto; min-width: 350px; background: rgba(0,0,0,0.8); }
+        /* ZONE CPU (Specchiate) */
+        .side-cpu { display: grid; grid-template-columns: 1.5fr 1fr 1fr; grid-template-rows: 1fr 1.5fr; transform: rotate(180deg); }
+        
+        /* ZONE PLAYER */
+        .side-player { display: grid; grid-template-columns: 1.5fr 2fr; grid-template-rows: 2fr 1.2fr; }
 
-        /* SIDEBAR */
-        .sidebar { background: var(--panel); display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
-        .stats-block { text-align: center; border: 1px solid #333; border-radius: 8px; padding: 10px; background: #000; }
-        .life-val { font-size: 32px; font-weight: 900; margin: 5px 0; }
-        .zones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .small-slot { height: 100px; border: 1px solid #333; border-radius: 6px; position: relative; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #666; }
+        .drop-zone { border: 1px solid var(--border); position: relative; display: flex; flex-wrap: wrap; gap: 5px; padding: 10px; align-content: flex-start; }
+        .drop-zone::before { content: attr(data-label); position: absolute; font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.03); text-transform: uppercase; z-index: 0; }
+        
+        /* POSIZIONAMENTO SPECIFICO MANO (Basso Sinistra come da schema) */
+        #p-hand-container { grid-row: 2; grid-column: 1; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); }
+        #p-hand { display: flex; gap: -35px; padding: 10px; }
+        #p-hand:hover { gap: 10px; }
+
+        /* SIDEBAR (CONTROLLI E STATISTICHE) */
+        .sidebar { background: #111; display: flex; flex-direction: column; padding: 15px; gap: 10px; }
+        .stat-group { background: #000; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; }
+        .life-total { font-size: 24px; font-weight: 900; margin: 5px 0; }
+        
+        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+        .slot { height: 85px; border: 1px solid #222; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; color: #555; background: #050505; }
+        .slot b { color: #aaa; font-size: 14px; }
 
         /* CARTE */
-        .card { width: var(--card-w); height: var(--card-h); border-radius: 6px; cursor: grab; transition: transform 0.2s; position: relative; flex-shrink: 0; }
-        .card:hover { transform: scale(2.8); z-index: 5000; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .card img { width: 100%; height: 100%; border-radius: 6px; pointer-events: none; }
-        .tapped { transform: rotate(90deg) !important; }
+        .card { width: 75px; aspect-ratio: 2.5/3.5; border-radius: 5px; transition: transform 0.2s; cursor: grab; position: relative; z-index: 10; }
+        .card img { width: 100%; height: 100%; border-radius: 5px; pointer-events: none; }
+        .card:hover { transform: scale(2.6) !important; z-index: 999 !important; box-shadow: 0 10px 25px #000; }
+        .tapped { transform: rotate(90deg); }
 
-        /* UI BUTTONS */
-        .mox-btn { width: 100%; padding: 12px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .btn-draw { background: var(--mox-orange); }
-        .btn-phase { background: var(--mox-blue); }
-        .btn-ai { background: var(--mox-red); }
+        /* BOTTONI ACTION */
+        .m-btn { width: 100%; padding: 10px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 5px; }
+        .btn-ai { background: var(--accent-red); color: white; }
+        .btn-draw { background: var(--accent-orange); color: white; }
+        .btn-phase { background: var(--accent-blue); color: white; margin-top: auto; }
 
-        #stack-float { position: absolute; right: 320px; top: 50%; transform: translateY(-50%); width: 110px; height: 150px; border: 2px solid gold; border-radius: 10px; background: rgba(218, 165, 32, 0.1); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        #stack-overlay { position: absolute; top: 50%; right: 300px; transform: translateY(-50%); width: 100px; height: 140px; border: 2px dashed gold; border-radius: 8px; background: rgba(255,215,0,0.05); display: none; align-items: center; justify-content: center; z-index: 2000; }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div style="font-weight: 900; color: var(--mox-blue);">MOXSIM MIRROR 3.0</div>
-    <input type="text" id="pUrl" placeholder="Player Deck (Moxfield)">
-    <input type="text" id="cUrl" placeholder="AI Deck (Moxfield)">
-    <button class="btn-main" onclick="initGame()">CARICA BATTAGLIA</button>
+<div id="top-bar">
+    <div style="font-weight: 900; color: var(--accent-blue); letter-spacing: 1px;">MOXSIM MIRROR 4.0</div>
+    <input type="text" id="pUrl" placeholder="Player Deck URL">
+    <input type="text" id="cUrl" placeholder="AI Deck URL">
+    <button class="btn-load" onclick="initGame()">CARICA BATTAGLIA</button>
 </div>
 
-<div id="main-grid">
-    <div id="battlefield">
-        <div class="field-side" style="transform: rotate(180deg);">
+<div id="game-container">
+    <div id="play-area">
+        <div class="side-cpu">
             <div class="drop-zone" data-label="Land" id="c-lands"></div>
-            <div class="drop-zone" data-label="Creatures" id="c-creats"></div>
+            <div class="drop-zone" data-label="Creatures" id="c-creatures"></div>
+            <div class="drop-zone" data-label="Other" id="c-other"></div>
         </div>
 
-        <div class="field-side">
-            <div class="drop-zone" data-label="Non-Creature" id="p-support"></div>
-            <div class="drop-zone" data-label="Creatures" id="p-creats"></div>
-            <div class="drop-zone" data-label="Land" id="p-lands" style="grid-column: span 2; min-height: 100px;"></div>
+        <div class="side-player">
+            <div class="drop-zone" data-label="Artefact, Enchantement and Battles" id="p-other" style="grid-row: 1;"></div>
+            <div class="drop-zone" data-label="Creatures" id="p-creatures" style="grid-row: 1;"></div>
+            <div id="p-hand-container"><div id="p-hand"></div></div>
+            <div class="drop-zone" data-label="Land" id="p-lands"></div>
         </div>
-
-        <div id="p-hand-zone" ondragover="event.preventDefault()" ondrop="dropCard(event)"></div>
-        <div id="stack-float">STACK</div>
     </div>
 
     <div class="sidebar">
-        <div class="stats-block">
-            <div style="color: var(--mox-red); font-size: 12px;">CPU LIFE</div>
-            <div class="life-val" style="color: var(--mox-red)">40</div>
-            <button class="mox-btn btn-ai" onclick="aiLogic()">AI MOVE</button>
+        <div class="zone-grid">
+            <div class="slot">LIB<br><b id="c-lib-val">0</b></div>
+            <div class="slot" id="c-cmd-slot">CMD</div>
         </div>
-        
-        <div class="zones-grid">
-            <div class="small-slot" id="c-lib">LIB<br><b id="c-count">0</b></div>
-            <div class="small-slot" id="c-cmd">CMD</div>
-            <div class="small-slot">GRAVE</div>
-            <div class="small-slot">EXILE</div>
+        <div class="stat-group">
+            <div style="color:var(--accent-red); font-size:10px;">CPU LIFE</div>
+            <div class="life-total" style="color:var(--accent-red)">40</div>
+            <button class="m-btn btn-ai" onclick="aiPlay()">AI MOVE</button>
+        </div>
+        <div class="zone-grid">
+            <div class="slot">GRAVE</div>
+            <div class="slot">EXILE</div>
         </div>
 
         <div style="flex-grow: 1;"></div>
 
-        <div class="zones-grid">
-            <div class="small-slot">EXILE</div>
-            <div class="small-slot">GRAVE</div>
-            <div class="small-slot" id="p-cmd">CMD</div>
-            <div class="small-slot" id="p-lib" onclick="draw('p')" style="cursor:pointer; border-color: var(--mox-blue);">LIB<br><b id="p-count">0</b></div>
+        <div class="zone-grid">
+            <div class="slot">EXILE</div>
+            <div class="slot">GRAVE</div>
         </div>
-
-        <div class="stats-block">
-            <div style="color: var(--mox-blue); font-size: 12px;">YOUR LIFE</div>
-            <div class="life-val" style="color: var(--mox-blue)">40</div>
-            <button class="mox-btn btn-draw" onclick="draw('p')">DRAW CARD</button>
+        <div class="stat-group">
+            <div style="color:var(--accent-blue); font-size:10px;">YOUR LIFE</div>
+            <div class="life-total" style="color:var(--accent-blue)">40</div>
+            <button class="m-btn btn-draw" onclick="drawCard('p')">DRAW CARD</button>
         </div>
-        
-        <button class="mox-btn btn-phase" id="phase-btn" onclick="nextPhase()">FASE: Iniziale</button>
+        <div class="zone-grid">
+            <div class="slot" id="p-cmd-slot">CMD</div>
+            <div class="slot" style="border-color:var(--accent-blue); cursor:pointer" onclick="drawCard('p')">LIB<br><b id="p-lib-val">0</b></div>
+        </div>
+        <button class="m-btn btn-phase" id="phase-display" onclick="stepPhase()">FASE: Iniziale</button>
     </div>
 </div>
 
+<div id="stack-overlay">STACK</div>
+
 <script>
-    let decks = { p: [], c: [] };
+    let pDeck = [], cDeck = [];
     const phases = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Principale 1", "Attacco", "Blocco", "Danno", "Principale 2", "Finale"];
-    let pIdx = 0;
+    let phaseIdx = 0;
 
     async function initGame() {
-        // RESET TOTALE (Migliorato)
-        decks = { p: [], c: [] };
-        document.querySelectorAll('.drop-zone, .small-slot, #p-hand-zone').forEach(z => {
-            const label = z.querySelector('.slot-label') || z.getAttribute('data-label');
-            z.innerHTML = label ? "" : z.innerHTML; 
-            if(z.id.includes('hand') || z.classList.contains('drop-zone')) z.innerHTML = "";
+        // RESET TOTALE (Pulisce tutto il DOM)
+        document.querySelectorAll('.drop-zone, #p-hand, .slot').forEach(z => {
+            if(!z.id.includes('val')) z.innerHTML = z.id.includes('slot') ? z.innerText : '';
         });
-
-        const [pD, cD] = await Promise.all([
-            fetchDeck(document.getElementById('pUrl').value),
-            fetchDeck(document.getElementById('cUrl').value)
-        ]);
-
-        decks.p = pD.main; decks.c = cD.main;
         
-        if(pD.cmdr) spawnCard(pD.cmdr, 'p-cmd');
-        if(cD.cmdr) spawnCard(cD.cmdr, 'c-cmd');
+        const pRes = await fetchMox(document.getElementById('pUrl').value);
+        const cRes = await fetchMox(document.getElementById('cUrl').value);
 
-        // Pesca iniziale 7
-        for(let i=0; i<7; i++) draw('p');
-        updateCounters();
+        pDeck = pRes.cards; cDeck = cRes.cards;
+        
+        if(pRes.cmdr) createCard(pRes.cmdr, 'p-cmd-slot');
+        if(cRes.cmdr) createCard(cRes.cmdr, 'c-cmd-slot');
+
+        // Pesca iniziale di 7 (Mazzo 99 -> 92)
+        for(let i=0; i<7; i++) drawCard('p');
+        updateStats();
     }
 
-    async function fetchDeck(url) {
+    async function fetchMox(url) {
         const id = url.split('/decks/')[1]?.split('?')[0];
-        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(res => res.json());
-        let main = [];
-        Object.values(r.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) main.push(c.card.name); });
-        return { main: main.sort(() => Math.random() - 0.5), cmdr: r.commanders ? Object.values(r.commanders)[0].card.name : null };
+        const data = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(r => r.json());
+        let cards = [];
+        Object.values(data.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) cards.push(c.card.name); });
+        return { cards: cards.sort(() => Math.random() - 0.5), cmdr: data.commanders ? Object.values(data.commanders)[0].card.name : null };
     }
 
-    function spawnCard(name, zoneId) {
-        const div = document.createElement('div');
-        div.className = 'card';
-        div.draggable = true;
-        div.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
-        div.ondblclick = () => div.classList.toggle('tapped');
-        div.ondragstart = (e) => { div.id = "dragging-" + Date.now(); e.dataTransfer.setData("text", div.id); };
-        document.getElementById(zoneId).appendChild(div);
-        return div;
+    function createCard(name, targetId) {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.draggable = true;
+        card.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
+        card.ondblclick = () => card.classList.toggle('tapped');
+        card.ondragstart = (e) => { card.id = "c-" + Date.now(); e.dataTransfer.setData("text", card.id); };
+        document.getElementById(targetId).appendChild(card);
+        return card;
     }
 
-    function draw(who) {
-        if(decks[who].length > 0) {
-            const name = decks[who].pop();
-            spawnCard(name, who === 'p' ? 'p-hand-zone' : 'c-creats');
-            updateCounters();
+    function drawCard(who) {
+        if(who === 'p' && pDeck.length > 0) {
+            createCard(pDeck.pop(), 'p-hand');
+        } else if(who === 'c' && cDeck.length > 0) {
+            createCard(cDeck.pop(), 'c-creatures');
         }
+        updateStats();
     }
 
-    function aiLogic() {
-        if(decks.c.length === 0) return;
-        const stack = document.getElementById('stack-float');
-        const name = decks.c.pop();
+    function aiPlay() {
+        if(cDeck.length === 0) return;
+        const stack = document.getElementById('stack-overlay');
+        const name = cDeck.pop();
         stack.style.display = 'flex';
-        const c = spawnCard(name, 'stack-float');
+        const c = createCard(name, 'stack-overlay');
         
         setTimeout(() => {
             const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("island") || name.toLowerCase().includes("swamp");
-            document.getElementById(isLand ? 'c-lands' : 'c-creats').appendChild(c);
+            document.getElementById(isLand ? 'c-lands' : 'c-creatures').appendChild(c);
             stack.style.display = 'none';
-            updateCounters();
-        }, 1000);
+            updateStats();
+        }, 800);
     }
 
-    function nextPhase() {
-        pIdx = (pIdx + 1) % phases.length;
-        document.getElementById('phase-btn').innerText = "FASE: " + phases[pIdx];
+    function stepPhase() {
+        phaseIdx = (phaseIdx + 1) % phases.length;
+        document.getElementById('phase-display').innerText = "FASE: " + phases[phaseIdx];
     }
 
-    function updateCounters() {
-        document.getElementById('p-count').innerText = decks.p.length;
-        document.getElementById('c-count').innerText = decks.c.length;
+    function updateStats() {
+        document.getElementById('p-lib-val').innerText = pDeck.length;
+        document.getElementById('c-lib-val').innerText = cDeck.length;
     }
 
-    // Drag and Drop Logic
-    document.querySelectorAll('.drop-zone, .small-slot, #p-hand-zone').forEach(zone => {
+    // Drag & Drop Magnetico
+    document.querySelectorAll('.drop-zone, #p-hand, .slot').forEach(zone => {
         zone.ondragover = e => e.preventDefault();
         zone.ondrop = e => {
-            e.preventDefault();
             const id = e.dataTransfer.getData("text");
             const el = document.getElementById(id);
             if(el) zone.appendChild(el);
