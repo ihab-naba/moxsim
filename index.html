@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena 4.0 - Phase & Rules Update</title>
+    <title>MoxSim Arena 5.0 - Final Layout</title>
     <style>
         :root { --bg: #0b1014; --accent: #00a2ff; --cpu: #ff4757; --glow: rgba(0, 162, 255, 0.7); --stack-color: #ffd700; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
@@ -14,127 +14,125 @@
         .load-btn { background: var(--accent); color: white; border: none; padding: 8px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         #settings-btn { position: fixed; top: 10px; right: 10px; z-index: 5001; background: #222; border: 1px solid #444; color: white; padding: 5px 12px; border-radius: 5px; cursor: pointer; display: none; }
 
-        /* LAYOUT */
-        #game-board { height: 100vh; width: 100%; display: flex; flex-direction: column; }
-        .player-section { flex: 1; display: flex; flex-direction: column; position: relative; }
+        /* GRIGLIA PRINCIPALE */
+        #game-board { height: 100vh; width: 100%; display: grid; grid-template-columns: 120px 1fr 180px; gap: 0; }
 
-        /* STACK POSIZIONATO AL CENTRO DESTRA (come da schema) */
-        #the-stack { 
-            position: absolute; right: 120px; top: 50%; transform: translateY(-50%);
-            width: 90px; height: 125px; border: 2px solid var(--stack-color); border-radius: 8px;
-            background: rgba(255, 215, 0, 0.05); z-index: 2000;
-            display: flex; align-items: center; justify-content: center;
+        /* ZONE LATERALI (Left & Right) */
+        .side-column { display: flex; flex-direction: column; justify-content: space-between; padding: 15px 0; align-items: center; background: rgba(0,0,0,0.2); }
+        .zone-group { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        
+        .zone-slot { 
+            width: 85px; height: 118px; border: 1.5px solid #2a2a2a; 
+            background: rgba(255,255,255,0.02); border-radius: 6px; 
+            display: flex; align-items: center; justify-content: center; position: relative; 
         }
-        #the-stack::after { content: 'STACK'; position: absolute; top: -18px; font-size: 10px; color: var(--stack-color); font-weight: bold; }
+        .zone-label { position: absolute; width: 100%; text-align: center; color: #555; font-size: 8px; font-weight: bold; pointer-events: none; text-transform: uppercase; bottom: 5px; }
 
-        /* BATTLEFIELD */
-        .battlefield-grid { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; padding: 10px; margin-bottom: 30px; }
-        .card-row { display: flex; justify-content: center; align-items: center; width: 80%; min-height: 110px; gap: 8px; }
+        /* LIFE COUNTERS (Sopra le zone chiave) */
+        .life-wrap { margin-bottom: 5px; text-align: center; }
+        .life-display { background: #111; border: 1px solid #333; padding: 4px 12px; border-radius: 6px; font-weight: bold; font-size: 18px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+
+        /* CAMPO DI BATTAGLIA (Centro) */
+        #battlefield { display: flex; flex-direction: column; position: relative; border-left: 1px solid #1a1a1a; border-right: 1px solid #1a1a1a; }
+        .player-field { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 15px; }
+        .card-row { display: flex; justify-content: center; align-items: center; width: 90%; min-height: 120px; gap: 10px; border: 1px dashed rgba(255,255,255,0.03); border-radius: 10px; }
+
+        /* STACK (Spostato a destra ma integrato) */
+        #the-stack { 
+            width: 90px; height: 125px; border: 2px solid var(--stack-color); border-radius: 8px;
+            background: rgba(255, 215, 0, 0.05); display: flex; align-items: center; justify-content: center;
+            position: relative; margin: 20px 0;
+        }
+        #the-stack::before { content: 'STACK'; position: absolute; top: -18px; font-size: 10px; color: var(--stack-color); font-weight: bold; }
 
         /* CARTE */
-        .card-wrapper { width: 75px; aspect-ratio: 2.5/3.5; position: relative; transition: all 0.2s; flex-shrink: 0; cursor: grab; }
-        .playable { box-shadow: 0 0 15px 2px var(--glow); border-radius: 6px; }
+        .card-wrapper { width: 80px; aspect-ratio: 2.5/3.5; position: relative; transition: all 0.2s; cursor: grab; z-index: 10; }
+        .playable { box-shadow: 0 0 12px 2px var(--glow); border-radius: 6px; }
         .card-wrapper:hover { transform: scale(3.5); z-index: 9000 !important; }
         .card-img { width: 100%; height: 100%; border-radius: 6px; pointer-events: none; }
         .tapped { transform: rotate(90deg) !important; }
 
-        /* ZONE LATERALI E VITA (Nuova Posizione) */
-        .side-zones { position: absolute; display: flex; flex-direction: column; gap: 15px; top: 50%; transform: translateY(-50%); }
-        .left { left: 20px; } .right { right: 20px; }
-        .zone-slot { width: 80px; height: 112px; border: 1.5px solid #2a2a2a; background: rgba(255,255,255,0.02); border-radius: 6px; display: flex; align-items: center; justify-content: center; position: relative; }
-        .zone-label { position: absolute; width: 100%; text-align: center; color: #444; font-size: 8px; font-weight: bold; pointer-events: none; text-transform: uppercase; }
+        /* PULSANTI E MANO */
+        .bottom-ui { position: fixed; bottom: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; pointer-events: none; z-index: 6000; }
+        .btn-game { pointer-events: auto; padding: 12px 25px; border-radius: 30px; border: none; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+        #draw-btn { background: #0072ff; }
+        #phase-btn { background: #222; border: 1px solid #444; min-width: 200px; }
+        #ai-btn { background: var(--cpu); padding: 8px 15px; border-radius: 5px; margin-top: 10px; }
 
-        /* CONTATORI VITA INTEGRATI NELLE ZONE */
-        .life-display { background: #1a1a1a; border: 1px solid #333; padding: 5px; border-radius: 4px; text-align: center; width: 40px; font-weight: bold; font-size: 14px; margin-bottom: 5px; }
-
-        /* PULSANTI AZIONE */
-        .action-bar { position: fixed; bottom: 10px; width: 100%; pointer-events: none; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; z-index: 4000; }
-        .btn-ui { pointer-events: auto; padding: 10px 20px; border-radius: 20px; border: none; font-weight: bold; color: white; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-        #draw-btn { background: linear-gradient(to bottom, #00c6ff, #0072ff); }
-        #phase-btn { background: linear-gradient(to bottom, #434343, #000000); border: 1px solid #444; min-width: 180px; }
-        #ai-action-btn { background: var(--cpu); position: absolute; right: 20px; bottom: 80px; pointer-events: auto; padding: 5px 10px; border-radius: 5px; font-size: 11px; }
-
-        /* MANO */
-        #p-hand { position: fixed; bottom: -30px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; width: 50%; height: 150px; transition: bottom 0.3s; z-index: 3000; }
-        #p-hand:hover { bottom: 20px; }
+        #p-hand { position: fixed; bottom: -35px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; width: 60%; height: 160px; transition: bottom 0.3s; z-index: 4000; }
+        #p-hand:hover { bottom: 25px; }
         #p-hand .card-wrapper { margin-left: -35px; }
     </style>
 </head>
 <body>
 
 <div id="top-ui">
-    <input type="text" id="pUrl" placeholder="Player Deck (Moxfield)">
-    <input type="text" id="cUrl" placeholder="AI Deck (Moxfield)">
-    <button class="load-btn" onclick="loadBattle()">START</button>
+    <input type="text" id="pUrl" placeholder="Player Deck URL">
+    <input type="text" id="cUrl" placeholder="AI Deck URL">
+    <button class="load-btn" onclick="loadBattle()">START BATTLE</button>
 </div>
 
-<button id="settings-btn" onclick="toggleSettings()">⚙️</button>
+<button id="settings-btn" onclick="toggleSettings()">⚙️ DECK</button>
 
 <div id="game-board">
-    <div id="the-stack"></div>
-
-    <div class="player-section">
-        <div class="side-zones left">
+    <div class="side-column">
+        <div class="zone-group">
             <div class="zone-slot"><span class="zone-label">Exile</span></div>
             <div class="zone-slot"><span class="zone-label">Graveyard</span></div>
         </div>
-        <div class="battlefield-grid">
-            <div class="card-row" id="c-row-lands"></div>
-            <div class="card-row" id="c-row-creatures"></div>
-        </div>
-        <div class="side-zones right">
-            <div class="life-display" style="color:var(--cpu)" id="c-life">40</div>
-            <div class="zone-slot" id="c-lib-slot">
-                <div style="width:100%;height:100%;background:url('https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg') center/cover;border-radius:5px;opacity:0.6;"></div>
-                <div id="c-count" style="position:absolute;font-weight:bold;">0</div>
-            </div>
-            <div class="zone-slot" id="c-cmd-zone"><span class="zone-label">Commander</span></div>
-        </div>
-    </div>
-
-    <div class="player-section">
-        <div class="side-zones left">
+        <div class="zone-group">
             <div class="zone-slot" id="p-cmd-zone"><span class="zone-label">Commander</span></div>
             <div class="zone-slot">
                 <div style="width:100%;height:100%;background:url('https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg') center/cover;border-radius:5px;opacity:0.6;"></div>
-                <div id="p-count" style="position:absolute;font-weight:bold;">0</div>
+                <div id="p-count" style="position:absolute;font-weight:bold;font-size:20px;">0</div>
             </div>
         </div>
-        <div class="battlefield-grid">
+    </div>
+
+    <div id="battlefield">
+        <div class="player-field" id="cpu-field">
+            <div class="card-row" id="c-row-lands"></div>
+            <div class="card-row" id="c-row-creatures"></div>
+        </div>
+        <div style="height:1px; background:rgba(255,255,255,0.1); width:100%;"></div>
+        <div class="player-field" id="user-field">
             <div class="card-row" id="p-row-creatures"></div>
             <div class="card-row" id="p-row-lands"></div>
         </div>
-        <div class="side-zones right">
-            <div class="life-display" style="color:var(--accent)" id="p-life">40</div>
+    </div>
+
+    <div class="side-column">
+        <div class="zone-group">
+            <div class="life-wrap"><div class="life-display" style="color:var(--cpu)">40</div></div>
+            <div class="zone-slot">
+                <div style="width:100%;height:100%;background:url('https://gamepedia.cursecdn.com/mtgsalvation_gamepedia/f/f8/Magic_card_back.jpg') center/cover;border-radius:5px;opacity:0.6;"></div>
+                <div id="c-count" style="position:absolute;font-weight:bold;font-size:20px;">0</div>
+            </div>
+            <div class="zone-slot" id="c-cmd-zone"><span class="zone-label">Commander</span></div>
+        </div>
+
+        <div id="the-stack"></div>
+
+        <div class="zone-group">
+            <button id="ai-btn" class="btn-game" onclick="aiAction()">AI ACTION</button>
             <div class="zone-slot"><span class="zone-label">Graveyard</span></div>
             <div class="zone-slot"><span class="zone-label">Exile</span></div>
+            <div class="life-wrap"><div class="life-display" style="color:var(--accent)">40</div></div>
         </div>
     </div>
 </div>
 
 <div id="p-hand"></div>
 
-<div class="action-bar">
-    <button id="draw-btn" class="btn-ui" onclick="draw('p')">DRAW</button>
-    <button id="ai-action-btn" class="btn-ui" onclick="aiAction()">AI ACTION</button>
-    <button id="phase-btn" class="btn-ui" onclick="nextPhase()">FASE: Iniziale</button>
+<div class="bottom-ui">
+    <button id="draw-btn" class="btn-game" onclick="draw('p')">DRAW</button>
+    <button id="phase-btn" class="btn-game" onclick="nextPhase()">FASE: Iniziale</button>
 </div>
 
 <script>
     let decks = { p: [], c: [] };
-    const phases = [
-        "Fase Iniziale", "Sottofase di STAP", "Sottofase di Mantenimento", "Sottofase di Acquisizione",
-        "Prima Fase Principale", "Fase di Combattimento", "Inizio Combattimento", "Dichiarazione Attaccanti",
-        "Dichiarazione Bloccanti", "Danno da Combattimento", "Fine Combattimento", "Seconda Fase Principale",
-        "Fase Finale", "Sottofase Finale"
-    ];
-    let currentPhaseIdx = 0;
-
-    function nextPhase() {
-        currentPhaseIdx = (currentPhaseIdx + 1) % phases.length;
-        document.getElementById('phase-btn').innerText = "FASE: " + phases[currentPhaseIdx];
-        if(currentPhaseIdx === 1) document.querySelectorAll('.tapped').forEach(c => c.classList.remove('tapped')); // Auto-Stap
-    }
+    const phases = ["Fase Iniziale", "Sottofase di STAP", "Mantenimento", "Acquisizione", "Principale 1", "Inizio Combattimento", "Attaccanti", "Bloccanti", "Danno", "Fine Combattimento", "Principale 2", "Fase Finale", "Sottofase Finale"];
+    let phaseIdx = 0;
 
     function toggleSettings() { document.getElementById('top-ui').classList.toggle('hidden'); }
 
@@ -144,13 +142,10 @@
         const cUrl = document.getElementById('cUrl').value;
         const [pD, cD] = await Promise.all([fetchM(pUrl), fetchM(cUrl)]);
         decks.p = parse(pD); decks.c = parse(cD);
-        
         document.getElementById('top-ui').classList.add('hidden');
         document.getElementById('settings-btn').style.display = 'block';
-
         if(pD.commanders) spawn(Object.values(pD.commanders)[0].card.name, 'p-cmd-zone');
         if(cD.commanders) spawn(Object.values(cD.commanders)[0].card.name, 'c-cmd-zone');
-
         for(let i=0; i<7; i++) draw('p');
         updateUI();
     }
@@ -158,8 +153,7 @@
     function resetGame() {
         document.getElementById('p-hand').innerHTML = '';
         document.querySelectorAll('.card-row').forEach(r => r.innerHTML = '');
-        currentPhaseIdx = 0;
-        document.getElementById('phase-btn').innerText = "FASE: Iniziale";
+        phaseIdx = 0; document.getElementById('phase-btn').innerText = "FASE: Iniziale";
     }
 
     async function fetchM(url) {
@@ -198,13 +192,18 @@
         document.getElementById('c-count').innerText = decks.c.length;
     }
 
+    function nextPhase() {
+        phaseIdx = (phaseIdx + 1) % phases.length;
+        document.getElementById('phase-btn').innerText = "FASE: " + phases[phaseIdx];
+    }
+
     function aiAction() {
         if(decks.c.length === 0) return;
         const name = decks.c.pop();
         const card = spawn(name, 'the-stack');
         setTimeout(() => {
-            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("island");
-            document.getElementById(isLand ? 'c-row-lands' : 'c-row-creatures').appendChild(card);
+            const isL = name.toLowerCase().includes("land") || name.toLowerCase().includes("island");
+            document.getElementById(isL ? 'c-row-lands' : 'c-row-creatures').appendChild(card);
             updateUI();
         }, 1200);
     }
