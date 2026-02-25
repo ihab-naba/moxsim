@@ -3,38 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoxSim Arena - Pro Mode</title>
+    <title>MoxSim Arena - Full Commander</title>
     <style>
         :root { --bg: #0b0d10; --field: #16191d; --accent: #00a2ff; --glow: rgba(0, 162, 255, 0.4); }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         #vfx-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1e23 0%, #0b0d10 100%); z-index: -1; }
-        #top-bar { height: 50px; background: rgba(0,0,0,0.85); display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #333; backdrop-filter: blur(10px); z-index: 100; position: relative; }
+        
+        #top-bar { height: 50px; background: rgba(0,0,0,0.85); display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #333; z-index: 100; position: relative; }
         input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; outline: none; }
-        
+
         #game-world { height: 100vh; width: 100%; position: relative; display: flex; }
-        #main-field { flex-grow: 1; position: relative; overflow: hidden; }
         
-        /* Sidebar Cimitero */
-        #graveyard { width: 150px; background: rgba(0,0,0,0.4); border-left: 1px solid #333; display: flex; flex-direction: column; align-items: center; padding: 10px; gap: 10px; overflow-y: auto; }
-        .gy-card { width: 100px; opacity: 0.6; grayscale(50%); margin-bottom: -80px; transition: 0.3s; }
-        .gy-card:hover { opacity: 1; margin-bottom: 5px; }
+        /* Sidebar Destra: GY e EXILE */
+        #right-sidebar { width: 140px; background: rgba(0,0,0,0.5); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 5px; gap: 10px; z-index: 50; }
+        .zone-container { flex: 1; border: 1px dashed #444; border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 10px; position: relative; }
+        .zone-label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
+        
+        /* Command Zone (In alto a sinistra) */
+        #command-zone { position: absolute; left: 20px; top: 70px; width: 120px; height: 160px; border: 2px dashed var(--accent); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 162, 255, 0.05); }
 
         /* Carte */
         .card-wrapper { position: absolute; width: 110px; cursor: grab; z-index: 10; transition: transform 0.2s; }
         .card-img { width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.8); }
         .tapped { transform: rotate(90deg) !important; }
 
+        /* Mini-carte per GY/Exile */
+        .mini-card { width: 100px; opacity: 0.7; margin-bottom: -110px; transition: 0.2s; position: relative !important; left: 0 !important; top: 0 !important; }
+        .mini-card:hover { opacity: 1; margin-bottom: 5px; transform: scale(1.1); z-index: 100; }
+
         /* Mano */
-        #hand { position: fixed; bottom: -10px; width: calc(100% - 150px); height: 160px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; z-index: 1000; pointer-events: none; }
+        #hand { position: fixed; bottom: -10px; width: calc(100% - 140px); height: 160px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; z-index: 1000; pointer-events: none; }
         #hand .card-wrapper { position: relative; margin-left: -40px; pointer-events: auto; }
         #hand .card-wrapper:hover { transform: translateY(-50px) scale(1.5); z-index: 2000; }
 
-        /* HUD */
-        #side-menu { position: absolute; right: 170px; top: 70px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
-        .stat-box { background: rgba(20,20,20,0.9); padding: 10px; border-radius: 10px; border: 1px solid #444; text-align: center; min-width: 100px; }
-        .btn-action { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 5px; }
+        /* Menu */
+        #side-menu { position: absolute; right: 155px; top: 70px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+        .stat-box { background: rgba(20,20,20,0.9); padding: 10px; border-radius: 10px; border: 1px solid #444; text-align: center; min-width: 90px; }
+        .btn-action { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 5px; font-weight: bold; }
         .btn-action:hover { background: var(--accent); }
-        .btn-mulligan { background: #ff4757; font-size: 10px; }
     </style>
 </head>
 <body>
@@ -42,15 +48,19 @@
 <div id="vfx-bg"></div>
 <div id="top-bar">
     <b style="color:var(--accent)">MOXSIM ARENA</b>
-    <input type="text" id="deckUrl" placeholder="URL Moxfield...">
+    <input type="text" id="deckUrl" placeholder="Incolla link Moxfield...">
     <button class="btn-action" style="width:auto; background:var(--accent)" onclick="importDeck()">CARICA</button>
 </div>
 
 <div id="game-world">
-    <div id="main-field" ondragover="event.preventDefault()" ondrop="dropToField(event)">
+    <div id="command-zone">
+        <div class="zone-label">Command Zone</div>
+        <div style="font-size: 9px; color: #555; text-align: center;">Trascina qui il tuo Comandante</div>
+    </div>
+
+    <div id="main-field" style="flex-grow:1; position:relative;">
         <div id="side-menu">
             <div class="stat-box">
-                <div style="font-size:10px">LIFE</div>
                 <div id="hp-val" style="font-size:24px; color:#ff4757; font-weight:bold">40</div>
                 <button class="btn-action" onclick="updateHP(1)">+</button>
                 <button class="btn-action" onclick="updateHP(-1)">-</button>
@@ -58,14 +68,16 @@
             <div class="stat-box">
                 <div id="deck-count" style="font-size:18px">0</div>
                 <button class="btn-action" onclick="drawCard()">PESCA</button>
-                <button class="btn-action btn-mulligan" onclick="mulligan()">MULLIGAN</button>
+                <button class="btn-action" style="background:#2ecc71" onclick="nextTurn()">TURN +</button>
             </div>
+            <button class="btn-action" style="background:#ff4757; font-size:10px" onclick="mulligan()">MULLIGAN</button>
         </div>
         <div id="player-field" style="width:100%; height:100%"></div>
     </div>
     
-    <div id="graveyard">
-        <div style="font-size:10px; color:#aaa">GRAVEYARD</div>
+    <div id="right-sidebar">
+        <div id="graveyard" class="zone-container"><div class="zone-label">Graveyard</div></div>
+        <div id="exile" class="zone-container"><div class="zone-label">Exile</div></div>
     </div>
 </div>
 
@@ -105,25 +117,16 @@
         document.getElementById('deck-count').innerText = deck.length;
         document.getElementById('hand').innerHTML = '';
         document.getElementById('player-field').innerHTML = '';
-        document.getElementById('graveyard').innerHTML = '<div style="font-size:10px; color:#aaa">GRAVEYARD</div>';
+        document.getElementById('graveyard').innerHTML = '<div class="zone-label">Graveyard</div>';
+        document.getElementById('exile').innerHTML = '<div class="zone-label">Exile</div>';
     }
 
-    function mulligan()
-    <button class="btn-action" style="background:#2ecc71" onclick="nextTurn()">PROSSIMO TURNO</button>
     function nextTurn() {
-        // 1. Stappa tutto (Untap)
-        const cards = document.querySelectorAll('.card-wrapper');
-        cards.forEach(c => c.classList.remove('tapped'));
-        
-        // 2. Pesca automaticamente (Draw)
+        document.querySelectorAll('.card-wrapper').forEach(c => c.classList.remove('tapped'));
         drawCard();
-        
-        // 3. Feedback visivo
-        const field = document.getElementById('player-field');
-        field.style.boxShadow = "inset 0 0 50px var(--accent)";
-        setTimeout(() => field.style.boxShadow = "none", 500);
     }
-    { if(confirm("Rimescolare tutto nel mazzo?")) resetGame(); }
+
+    function mulligan() { if(confirm("Rimescolare?")) resetGame(); }
 
     function drawCard() {
         if(deck.length === 0) return;
@@ -141,16 +144,26 @@
         img.className = 'card-img';
         wrapper.appendChild(img);
 
-        wrapper.ondblclick = () => { if(wrapper.parentElement.id !== 'hand') { playSnd('snd-tap'); wrapper.classList.toggle('tapped'); } };
+        wrapper.ondblclick = () => { if(!wrapper.classList.contains('mini-card')) { playSnd('snd-tap'); wrapper.classList.toggle('tapped'); } };
         
-        // Tasto destro per mandare al cimitero
+        // CLICK DESTRO: Menu Rapido
         wrapper.oncontextmenu = (e) => {
             e.preventDefault();
-            const gy = document.getElementById('graveyard');
-            wrapper.className = 'gy-card';
-            wrapper.style.position = 'relative';
-            wrapper.style.left = '0'; wrapper.style.top = '0';
-            gy.appendChild(wrapper);
+            const choice = prompt("Dove vuoi mandare la carta?\n1 = Cimitero\n2 = Esilio\n3 = Command Zone\n4 = In cima al mazzo");
+            
+            if(choice === "1") sendToZone(wrapper, 'graveyard');
+            if(choice === "2") sendToZone(wrapper, 'exile');
+            if(choice === "3") {
+                wrapper.className = 'card-wrapper';
+                wrapper.style.position = 'relative';
+                wrapper.style.left = '0'; wrapper.style.top = '0';
+                document.getElementById('command-zone').appendChild(wrapper);
+            }
+            if(choice === "4") {
+                deck.push({name: name});
+                document.getElementById('deck-count').innerText = deck.length;
+                wrapper.remove();
+            }
         };
 
         wrapper.onmousedown = function(e) {
@@ -159,7 +172,11 @@
             let shiftY = e.clientY - wrapper.getBoundingClientRect().top;
             function moveAt(px, py) { wrapper.style.left = px - shiftX + 'px'; wrapper.style.top = py - shiftY + 'px'; }
             function onMouseMove(e) {
-                if(wrapper.parentElement.id === 'hand') { document.getElementById('player-field').appendChild(wrapper); wrapper.style.position = 'absolute'; }
+                if(wrapper.parentElement.id === 'hand' || wrapper.classList.contains('mini-card')) {
+                    wrapper.className = 'card-wrapper';
+                    document.getElementById('player-field').appendChild(wrapper);
+                    wrapper.style.position = 'absolute';
+                }
                 moveAt(e.clientX, e.clientY);
             }
             document.addEventListener('mousemove', onMouseMove);
@@ -168,6 +185,13 @@
 
         if(toHand) document.getElementById('hand').appendChild(wrapper);
         else document.getElementById('player-field').appendChild(wrapper);
+    }
+
+    function sendToZone(el, zoneId) {
+        el.className = 'mini-card';
+        el.style.position = 'relative';
+        el.style.left = '0'; el.style.top = '0';
+        document.getElementById(zoneId).appendChild(el);
     }
 </script>
 </body>
