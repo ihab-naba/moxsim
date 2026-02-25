@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoxSim Arena - Full Commander</title>
+    <title>MoxSim Arena - Ultimate Edition</title>
     <style>
-        :root { --bg: #0b0d10; --field: #16191d; --accent: #00a2ff; --glow: rgba(0, 162, 255, 0.4); }
+        :root { --bg: #0b0d10; --accent: #00a2ff; --glow: rgba(0, 162, 255, 0.4); }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         #vfx-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1e23 0%, #0b0d10 100%); z-index: -1; }
         
@@ -14,17 +14,17 @@
 
         #game-world { height: 100vh; width: 100%; position: relative; display: flex; }
         
-        /* Sidebar Destra: GY e EXILE */
+        /* Sidebar Destra */
         #right-sidebar { width: 140px; background: rgba(0,0,0,0.5); border-left: 1px solid #333; display: flex; flex-direction: column; padding: 5px; gap: 10px; z-index: 50; }
-        .zone-container { flex: 1; border: 1px dashed #444; border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 10px; position: relative; }
+        .zone-container { flex: 1; border: 1px dashed #444; border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding-top: 10px; }
         .zone-label { font-size: 10px; color: #888; text-transform: uppercase; margin-bottom: 5px; font-weight: bold; }
         
-        /* Command Zone (In alto a sinistra) */
+        /* Command Zone */
         #command-zone { position: absolute; left: 20px; top: 70px; width: 120px; height: 160px; border: 2px dashed var(--accent); border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 162, 255, 0.05); }
 
         /* Carte */
         .card-wrapper { position: absolute; width: 110px; cursor: grab; z-index: 10; transition: transform 0.2s; }
-        .card-img { width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.8); }
+        .card-img { width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.8); pointer-events: none; }
         .tapped { transform: rotate(90deg) !important; }
 
         /* Mini-carte per GY/Exile */
@@ -36,9 +36,10 @@
         #hand .card-wrapper { position: relative; margin-left: -40px; pointer-events: auto; }
         #hand .card-wrapper:hover { transform: translateY(-50px) scale(1.5); z-index: 2000; }
 
-        /* Menu */
+        /* HUD */
         #side-menu { position: absolute; right: 155px; top: 70px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
         .stat-box { background: rgba(20,20,20,0.9); padding: 10px; border-radius: 10px; border: 1px solid #444; text-align: center; min-width: 90px; }
+        .hp-text { font-size: 24px; color: #ff4757; font-weight: bold; }
         .btn-action { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 5px; font-weight: bold; }
         .btn-action:hover { background: var(--accent); }
     </style>
@@ -55,13 +56,12 @@
 <div id="game-world">
     <div id="command-zone">
         <div class="zone-label">Command Zone</div>
-        <div style="font-size: 9px; color: #555; text-align: center;">Trascina qui il tuo Comandante</div>
     </div>
 
     <div id="main-field" style="flex-grow:1; position:relative;">
         <div id="side-menu">
             <div class="stat-box">
-                <div id="hp-val" style="font-size:24px; color:#ff4757; font-weight:bold">40</div>
+                <div class="hp-text" id="hp-val">40</div>
                 <button class="btn-action" onclick="updateHP(1)">+</button>
                 <button class="btn-action" onclick="updateHP(-1)">-</button>
             </div>
@@ -91,12 +91,17 @@
     let initialDeck = [];
     let life = 40;
 
-    function playSnd(id) { document.getElementById(id).currentTime = 0; document.getElementById(id).play().catch(()=>{}); }
+    function playSnd(id) { 
+        const s = document.getElementById(id); 
+        if(s) { s.currentTime = 0; s.play().catch(()=>{}); } 
+    }
+    
     function updateHP(v) { life += v; document.getElementById('hp-val').innerText = life; }
 
     async function importDeck() {
         const url = document.getElementById('deckUrl').value;
         const id = url.split('/decks/')[1]?.split('?')[0];
+        if(!id) return alert("Link non valido!");
         const proxy = "https://corsproxy.io/?";
         const target = `https://api.moxfield.com/v2/decks/all/${id}`;
 
@@ -108,8 +113,8 @@
                 for(let i=0; i<c.quantity; i++) initialDeck.push({name: c.card.name});
             });
             resetGame();
-            alert("Mazzo caricato!");
-        } catch(e) { alert("Errore caricamento."); }
+            alert("Mazzo pronto!");
+        } catch(e) { alert("Errore di caricamento."); }
     }
 
     function resetGame() {
@@ -144,44 +149,54 @@
         img.className = 'card-img';
         wrapper.appendChild(img);
 
-        wrapper.ondblclick = () => { if(!wrapper.classList.contains('mini-card')) { playSnd('snd-tap'); wrapper.classList.toggle('tapped'); } };
+        wrapper.ondblclick = () => { 
+            if(!wrapper.classList.contains('mini-card')) { 
+                playSnd('snd-tap'); 
+                wrapper.classList.toggle('tapped'); 
+            } 
+        };
         
-        // CLICK DESTRO: Menu Rapido
         wrapper.oncontextmenu = (e) => {
             e.preventDefault();
-            const choice = prompt("Dove vuoi mandare la carta?\n1 = Cimitero\n2 = Esilio\n3 = Command Zone\n4 = In cima al mazzo");
-            
+            const choice = prompt("Dove vuoi mandare la carta?\n1 = Graveyard\n2 = Exile\n3 = Command Zone\n4 = Top Deck");
             if(choice === "1") sendToZone(wrapper, 'graveyard');
-            if(choice === "2") sendToZone(wrapper, 'exile');
-            if(choice === "3") {
+            else if(choice === "2") sendToZone(wrapper, 'exile');
+            else if(choice === "3") {
                 wrapper.className = 'card-wrapper';
                 wrapper.style.position = 'relative';
                 wrapper.style.left = '0'; wrapper.style.top = '0';
                 document.getElementById('command-zone').appendChild(wrapper);
             }
-            if(choice === "4") {
+            else if(choice === "4") {
                 deck.push({name: name});
                 document.getElementById('deck-count').innerText = deck.length;
                 wrapper.remove();
             }
         };
 
+        // IL TUO NUOVO SISTEMA DI TRASCINAMENTO
         wrapper.onmousedown = function(e) {
             if(e.button !== 0) return;
             let shiftX = e.clientX - wrapper.getBoundingClientRect().left;
             let shiftY = e.clientY - wrapper.getBoundingClientRect().top;
-            function moveAt(px, py) { wrapper.style.left = px - shiftX + 'px'; wrapper.style.top = py - shiftY + 'px'; }
+            
             function onMouseMove(e) {
                 if(wrapper.parentElement.id === 'hand' || wrapper.classList.contains('mini-card')) {
                     wrapper.className = 'card-wrapper';
                     document.getElementById('player-field').appendChild(wrapper);
                     wrapper.style.position = 'absolute';
                 }
-                moveAt(e.clientX, e.clientY);
+                wrapper.style.left = (e.clientX - shiftX) + 'px';
+                wrapper.style.top = (e.clientY - shiftY) + 'px';
             }
+
             document.addEventListener('mousemove', onMouseMove);
-            document.onmouseup = () => document.removeEventListener('mousemove', onMouseMove);
+            document.onmouseup = () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                wrapper.onmouseup = null;
+            };
         };
+        wrapper.ondragstart = () => false;
 
         if(toHand) document.getElementById('hand').appendChild(wrapper);
         else document.getElementById('player-field').appendChild(wrapper);
