@@ -2,159 +2,169 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Mirror - Precision Layout</title>
+    <title>MoxSim Mirror Pro - Ultimate Layout</title>
     <style>
-        :root { --bg: #0d0d0d; --border: #1a1a1a; --text: #888; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
-
-        /* Struttura Principale */
-        #app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
-
-        /* Tavolo da gioco */
-        #board { display: grid; grid-template-rows: 1fr 1fr; border-right: 2px solid #222; }
-
-        /* Griglia Player (Basata su ugviy.png) */
-        .player-grid { 
-            display: grid; 
-            grid-template-areas: 
-                "others creatures"
-                "hand lands";
-            grid-template-columns: 1fr 2fr; /* Others e Hand sono più stretti */
-            grid-template-rows: 2fr 1fr;    /* Creature e Others occupano più spazio verticale */
-            gap: 2px; background: #222; /* Crea l'effetto linee di divisione */
+        :root {
+            --bg: #0a0a0a;
+            --panel: #111;
+            --border: #222;
+            --card-w: 70px; /* Dimensione base bilanciata */
+            --card-h: 98px;
         }
 
-        /* Griglia CPU (Specchiata invertendo le aree) */
-        .cpu-grid { 
-            display: grid; 
-            grid-template-areas: 
-                "lands hand"
-                "creatures others";
-            grid-template-columns: 2fr 1fr; 
-            grid-template-rows: 1fr 2fr;
-            gap: 2px; background: #222;
-        }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
 
-        .zone { background: var(--bg); position: relative; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
-        .zone::after { content: attr(data-label); position: absolute; top: 10px; left: 10px; font-size: 12px; color: #333; text-transform: uppercase; font-weight: bold; pointer-events: none; }
+        /* HEADER */
+        #header { height: 40px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 1px solid var(--border); }
+        input { background: #1a1a1a; border: 1px solid #333; color: white; padding: 5px; flex: 1; border-radius: 4px; font-size: 12px; }
+        .btn-start { background: #007bff; border: none; color: white; padding: 5px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 
-        /* Mapping Aree */
-        .z-others { grid-area: others; }
-        .z-creatures { grid-area: creatures; }
-        .z-hand { grid-area: hand; border: 1px solid #1a1a1a; background: #050505; }
-        .z-lands { grid-area: lands; }
+        /* MAIN STRUCTURE */
+        #main-container { display: grid; grid-template-columns: 1fr 240px; height: calc(100vh - 40px); }
 
-        /* Sidebar */
-        .sidebar { background: #111; display: flex; flex-direction: column; padding: 15px; gap: 10px; }
-        .stat-card { background: #000; border: 1px solid #222; padding: 15px; text-align: center; border-radius: 4px; }
-        .life { font-size: 28px; font-weight: bold; margin: 10px 0; }
+        /* PLAYFIELD */
+        #playfield { display: grid; grid-template-rows: 1fr 1fr; border-right: 1px solid var(--border); }
+
+        /* GRID ZONES (Basate su ugviy.png) */
+        .grid-half { display: grid; grid-template-columns: 1fr 2.5fr; grid-template-rows: 1.5fr 1fr; gap: 2px; background: #222; }
+        .cpu-side { transform: rotate(180deg); } /* Specchio CPU */
+
+        .zone { background: var(--bg); position: relative; padding: 10px; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start; overflow-y: auto; }
+        .zone::before { content: attr(data-label); position: absolute; top: 5px; left: 8px; font-size: 10px; color: #444; font-weight: bold; text-transform: uppercase; pointer-events: none; }
+
+        /* CONTENITORE MANO (In basso a sinistra) */
+        .hand-zone { display: flex; align-items: center; justify-content: flex-start; padding-left: 15px !important; gap: -20px; }
+        .hand-zone .card { transition: transform 0.2s, margin 0.2s; }
+        .hand-zone .card:hover { margin-right: 40px; z-index: 100; }
+
+        /* SIDEBAR (Status & Zones) */
+        .sidebar { background: var(--panel); display: flex; flex-direction: column; padding: 10px; gap: 8px; border-left: 1px solid var(--border); }
         
-        .zone-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .mini-slot { height: 80px; border: 1px solid #222; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #444; }
-        .mini-slot b { color: #fff; font-size: 16px; }
+        /* BOX STATS */
+        .stat-box { background: #000; border: 1px solid #333; padding: 10px; border-radius: 6px; text-align: center; }
+        .life-value { font-size: 24px; font-weight: bold; margin: 5px 0; }
+        .btn-action { width: 100%; padding: 8px; border-radius: 4px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; }
 
-        /* Carte */
-        .card { width: 80px; aspect-ratio: 2.5/3.5; border-radius: 4px; cursor: grab; transition: transform 0.2s; position: relative; }
-        .card img { width: 100%; height: 100%; border-radius: 4px; pointer-events: none; }
-        .card:hover { transform: scale(3); z-index: 1000; box-shadow: 0 0 20px #000; }
-        .tapped { transform: rotate(90deg); }
+        /* ZONINE (Library, Cmd, Grave, Exile) */
+        .small-zones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .mini-zone { 
+            height: 100px; background: #050505; border: 1px solid #222; border-radius: 4px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative; overflow: hidden; font-size: 10px; color: #555;
+        }
+        .mini-zone b { font-size: 16px; color: #fff; z-index: 2; }
+        .mini-zone .card { width: 90%; height: 90%; position: absolute; transform: scale(0.9); pointer-events: none; opacity: 0.5; }
 
-        /* Input Bar */
-        #controls { background: #000; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #222; }
-        input { background: #111; border: 1px solid #333; color: white; padding: 5px; flex: 1; border-radius: 3px; }
-        button { background: #3498db; border: none; color: white; padding: 5px 15px; cursor: pointer; font-weight: bold; border-radius: 3px; }
+        /* CARDS */
+        .card { 
+            width: var(--card-w); height: var(--card-h); border-radius: 5px; 
+            cursor: grab; position: relative; background: #222; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            flex-shrink: 0;
+        }
+        .card img { width: 100%; height: 100%; border-radius: 5px; pointer-events: none; }
+        .card:hover { transform: scale(3) !important; z-index: 5000 !important; box-shadow: 0 5px 15px rgba(0,0,0,1); }
+        .tapped { transform: rotate(90deg) !important; }
 
-        .btn-ai { background: #e74c3c; width: 100%; padding: 10px; margin-top: 5px; font-weight: bold; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        /* STACK */
+        #stack { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 120px; height: 160px; border: 2px dashed #f1c40f; border-radius: 10px; background: rgba(241, 196, 15, 0.05); display: none; align-items: center; justify-content: center; z-index: 1000; }
     </style>
 </head>
 <body>
 
-<div id="controls">
-    <input type="text" id="pUrl" placeholder="Player Moxfield URL">
-    <input type="text" id="cUrl" placeholder="AI Moxfield URL">
-    <button onclick="setupGame()">CARICA BATTAGLIA</button>
+<div id="header">
+    <div style="font-weight: 900; color: #007bff; font-size: 14px;">MOXSIM MIRROR 5.0</div>
+    <input type="text" id="pUrl" placeholder="Player Deck (Moxfield)">
+    <input type="text" id="cUrl" placeholder="AI Deck (Moxfield)">
+    <button class="btn-start" onclick="initGame()">CARICA BATTAGLIA</button>
 </div>
 
-<div id="app">
-    <div id="board">
-        <div class="cpu-grid">
-            <div class="zone z-lands" id="c-lands" data-label="Lands (CPU)"></div>
-            <div class="zone z-hand" id="c-hand" data-label="Hand (CPU)"></div>
-            <div class="zone z-creatures" id="c-creatures" data-label="Creatures (CPU)"></div>
-            <div class="zone z-others" id="c-others" data-label="Non-Creatures (CPU)"></div>
+<div id="main-container">
+    <div id="playfield">
+        <div class="grid-half cpu-side">
+            <div class="zone" data-label="Lands" id="c-lands"></div>
+            <div class="zone" data-label="Others" id="c-others"></div>
+            <div class="zone hand-zone" data-label="Hand" id="c-hand"></div>
+            <div class="zone" data-label="Creatures" id="c-creatures"></div>
         </div>
 
-        <div class="player-grid">
-            <div class="zone z-others" id="p-others" data-label="Artefacts / Enchantments"></div>
-            <div class="zone z-creatures" id="p-creatures" data-label="Creatures"></div>
-            <div class="zone z-hand" id="p-hand" data-label="Hand"></div>
-            <div class="zone z-lands" id="p-lands" data-label="Lands"></div>
+        <div class="grid-half">
+            <div class="zone" data-label="Others / Enchants" id="p-others"></div>
+            <div class="zone" data-label="Creatures" id="p-creatures"></div>
+            <div class="zone hand-zone" data-label="Hand" id="p-hand"></div>
+            <div class="zone" data-label="Lands" id="p-lands"></div>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="zone-stack">
-            <div class="mini-slot">LIB<br><b id="c-lib">0</b></div>
-            <div class="mini-slot" id="c-cmd-slot">CMD</div>
+        <div class="small-zones-grid">
+            <div class="mini-zone" id="c-lib-box">LIB<b id="c-count">99</b></div>
+            <div class="mini-zone" id="c-cmd-box" data-label="CMD"></div>
         </div>
-        <div class="stat-card">
-            <div style="color:#e74c3c">CPU LIFE</div>
-            <div class="life" style="color:#e74c3c">40</div>
-            <button class="btn-ai" onclick="aiMove()">AI MOVE</button>
+        <div class="stat-box">
+            <div style="color:#ff4757; font-size:10px">CPU LIFE</div>
+            <div class="life-value" style="color:#ff4757">40</div>
+            <button class="btn-action" style="background:#ff4757; color:white" onclick="aiPlay()">AI MOVE</button>
         </div>
-        <div class="zone-stack">
-            <div class="mini-slot">GRAVE</div>
-            <div class="mini-slot">EXILE</div>
+        <div class="small-zones-grid">
+            <div class="mini-zone" id="c-grave" data-label="GRAVE"></div>
+            <div class="mini-zone" id="c-exile" data-label="EXILE"></div>
         </div>
 
-        <div style="flex-grow: 1"></div>
+        <div style="flex-grow: 1;"></div>
 
-        <div class="zone-stack">
-            <div class="mini-slot">EXILE</div>
-            <div class="mini-slot">GRAVE</div>
+        <div class="small-zones-grid">
+            <div class="mini-zone" id="p-exile" data-label="EXILE"></div>
+            <div class="mini-zone" id="p-grave" data-label="GRAVE"></div>
         </div>
-        <div class="stat-card">
-            <div style="color:#3498db">YOUR LIFE</div>
-            <div class="life" style="color:#3498db">40</div>
-            <button class="btn-ai" style="background:#e67e22" onclick="draw('p')">DRAW CARD</button>
+        <div class="stat-box">
+            <div style="color:#007bff; font-size:10px">YOUR LIFE</div>
+            <div class="life-value" style="color:#007bff">40</div>
+            <button class="btn-action" style="background:#e67e22; color:white" onclick="draw('p')">DRAW CARD</button>
         </div>
-        <div class="zone-stack">
-            <div class="mini-slot" id="p-cmd-slot">CMD</div>
-            <div class="mini-slot" style="border-color:#3498db">LIB<br><b id="p-lib">0</b></div>
+        <div class="small-zones-grid">
+            <div class="mini-zone" id="p-cmd-box" data-label="CMD"></div>
+            <div class="mini-zone" id="p-lib-box" style="border-color:#007bff; cursor:pointer" onclick="draw('p')">
+                LIB<b id="p-count">92</b>
+            </div>
         </div>
-        <button class="btn-ai" style="background:#3498db; border-radius: 20px" id="phase-btn" onclick="nextPhase()">FASE: Iniziale</button>
+        <button class="btn-action" style="background:#007bff; color:white; border-radius:20px" id="phase-btn" onclick="nextPhase()">FASE: Iniziale</button>
     </div>
 </div>
 
+<div id="stack">STACK</div>
+
 <script>
-    let decks = { p: [], c: [] };
-    const phaseList = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Main 1", "Attacco", "Blocco", "Danno", "Main 2", "Finale"];
-    let currentPhase = 0;
+    let pDeck = [], cDeck = [];
+    const phases = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Main 1", "Combat", "Main 2", "Finale"];
+    let phaseIdx = 0;
 
-    async function setupGame() {
-        // RESET TOTALE
-        document.querySelectorAll('.zone, .mini-slot').forEach(z => {
-            if(!z.id.includes('lib')) z.innerHTML = '';
+    async function initGame() {
+        // RESET TOTALE (Pulisce tutto il DOM prima di ricaricare)
+        document.querySelectorAll('.zone, .mini-zone').forEach(z => {
+            if(!z.id.includes('count')) z.innerHTML = '';
         });
-        
-        const pData = await fetchDeck(document.getElementById('pUrl').value);
-        const cData = await fetchDeck(document.getElementById('cUrl').value);
-        
-        decks.p = pData.main; decks.c = cData.main;
-        
-        if(pData.cmdr) spawnCard(pData.cmdr, 'p-cmd-slot');
-        if(cData.cmdr) spawnCard(cData.cmdr, 'c-cmd-slot');
+        pDeck = []; cDeck = [];
 
+        const pRes = await fetchDeck(document.getElementById('pUrl').value);
+        const cRes = await fetchDeck(document.getElementById('cUrl').value);
+
+        pDeck = pRes.main; cDeck = cRes.main;
+
+        // Spawn Comandanti nelle zone corrette
+        if(pRes.cmdr) spawnCard(pRes.cmdr, 'p-cmd-box');
+        if(cRes.cmdr) spawnCard(cRes.cmdr, 'c-cmd-box');
+
+        // Pesca iniziale 7 (99-7 = 92)
         for(let i=0; i<7; i++) draw('p');
-        updateCounters();
+        updateUI();
     }
 
     async function fetchDeck(url) {
         const id = url.split('/decks/')[1]?.split('?')[0];
-        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(res => res.json());
+        const data = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(r => r.json());
         let main = [];
-        Object.values(r.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) main.push(c.card.name); });
-        return { main: main.sort(() => Math.random() - 0.5), cmdr: r.commanders ? Object.values(r.commanders)[0].card.name : null };
+        Object.values(data.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) main.push(c.card.name); });
+        return { main: main.sort(() => Math.random() - 0.5), cmdr: data.commanders ? Object.values(data.commanders)[0].card.name : null };
     }
 
     function spawnCard(name, zoneId) {
@@ -163,38 +173,46 @@
         card.draggable = true;
         card.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
         card.ondblclick = () => card.classList.toggle('tapped');
-        card.ondragstart = (e) => { card.id = "dt-" + Date.now(); e.dataTransfer.setData("text", card.id); };
+        card.ondragstart = (e) => { card.id = "c-" + Date.now(); e.dataTransfer.setData("text", card.id); };
         document.getElementById(zoneId).appendChild(card);
+        return card;
     }
 
     function draw(who) {
-        if(decks[who].length > 0) {
-            spawnCard(decks[who].pop(), who === 'p' ? 'p-hand' : 'c-creatures');
-            updateCounters();
+        const deck = who === 'p' ? pDeck : cDeck;
+        if(deck.length > 0) {
+            spawnCard(deck.pop(), who === 'p' ? 'p-hand' : 'c-hand');
+            updateUI();
         }
     }
 
-    function aiMove() {
-        if(decks.c.length > 0) {
-            const name = decks.c.pop();
-            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("swamp") || name.toLowerCase().includes("island");
-            spawnCard(name, isLand ? 'c-lands' : 'c-creatures');
-            updateCounters();
-        }
+    function aiPlay() {
+        if(cDeck.length === 0) return;
+        const stack = document.getElementById('stack');
+        const name = cDeck.pop();
+        stack.style.display = 'flex';
+        const card = spawnCard(name, 'stack');
+        
+        setTimeout(() => {
+            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("island");
+            document.getElementById(isLand ? 'c-lands' : 'c-creatures').appendChild(card);
+            stack.style.display = 'none';
+            updateUI();
+        }, 800);
     }
 
     function nextPhase() {
-        currentPhase = (currentPhase + 1) % phaseList.length;
-        document.getElementById('phase-btn').innerText = "FASE: " + phaseList[currentPhase];
+        phaseIdx = (phaseIdx + 1) % phases.length;
+        document.getElementById('phase-btn').innerText = "FASE: " + phases[phaseIdx];
     }
 
-    function updateCounters() {
-        document.getElementById('p-lib').innerText = decks.p.length;
-        document.getElementById('c-lib').innerText = decks.c.length;
+    function updateUI() {
+        document.getElementById('p-count').innerText = pDeck.length;
+        document.getElementById('c-count').innerText = cDeck.length;
     }
 
-    // Drag & Drop
-    document.querySelectorAll('.zone, .mini-slot').forEach(z => {
+    // Drag & Drop Magnetico
+    document.querySelectorAll('.zone, .mini-zone').forEach(z => {
         z.ondragover = e => e.preventDefault();
         z.ondrop = e => {
             const id = e.dataTransfer.getData("text");
