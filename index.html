@@ -2,75 +2,73 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Dynamic Layout</title>
+    <title>MoxSim Arena - Ultimate Layout</title>
     <style>
         :root { --bg: #0b1014; --accent: #00a2ff; --cpu: #ff4757; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         
-        #game-board { height: 100vh; width: 100%; display: flex; flex-direction: column; }
-        
-        /* Aree Giocatore/CPU */
-        .player-section { flex: 1; display: flex; flex-direction: column; position: relative; border: 1px solid #1a1a1a; }
-        
-        /* IL SEGRETO DI ARENA: Il Battlefield Diviso */
-        .battlefield-grid { 
-            flex-grow: 1; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            align-items: center; 
-            gap: 10px;
-            padding: 20px;
-        }
+        /* Barra di caricamento dinamica */
+        #top-ui { position: fixed; top: 0; width: 100%; height: 45px; background: rgba(0,0,0,0.95); display: flex; align-items: center; padding: 0 15px; gap: 10px; z-index: 5000; transition: transform 0.4s; border-bottom: 1px solid #333; }
+        #top-ui.hidden { transform: translateY(-100%); }
+        input { background: #111; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; flex: 1; font-size: 12px; }
 
-        /* Righe magnetiche per le carte */
+        /* Tasto Refresh/Settings */
+        #settings-btn { position: fixed; top: 10px; right: 10px; z-index: 5001; background: rgba(255,255,255,0.1); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; display: none; }
+        #settings-btn:hover { background: var(--accent); }
+
+        #game-board { height: 100vh; width: 100%; display: flex; flex-direction: column; }
+        .player-section { flex: 1; display: flex; flex-direction: column; position: relative; }
+        
+        /* Battlefield: Il cuore dell'ordine */
+        .battlefield-grid { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; padding: 10px; }
+        
+        /* RIGA DINAMICA (Auto-Stacking) */
         .card-row { 
             display: flex; 
             justify-content: center; 
-            gap: 5px; 
-            min-height: 100px; 
-            width: 90%; 
-            border-radius: 10px;
-            transition: background 0.3s;
+            align-items: center;
+            width: 85%; 
+            min-height: 110px;
+            /* Se ci sono troppe carte, si sovrappongono */
+            gap: calc(-10px + (100% - 800px) / 100); 
+            transition: all 0.3s;
         }
-        .card-row:empty::after { content: 'Trascina qui le carte'; color: rgba(255,255,255,0.05); font-size: 12px; margin-top: 40px; }
 
-        /* Carte piccole e intelligenti */
         .card-wrapper { 
-            width: 70px; /* Più piccole di base */
-            aspect-ratio: 2.5/3.5;
-            transition: all 0.2s ease;
-            cursor: grab;
-            position: relative !important; /* Non più absolute selvaggio */
+            width: 75px; 
+            aspect-ratio: 2.5/3.5; 
+            position: relative !important; 
+            transition: all 0.2s; 
+            flex-shrink: 1; /* Permette alla carta di stringersi */
         }
-        
-        /* Zoom potente al passaggio */
-        .card-wrapper:hover { 
-            transform: scale(3.5) translateY(-20%); 
-            z-index: 9999 !important; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-        }
+        .card-wrapper:hover { transform: scale(3.5) translateY(-10%); z-index: 9000 !important; }
+        .card-img { width: 100%; border-radius: 5px; pointer-events: none; box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+        .tapped { transform: rotate(90deg) scale(0.9); }
 
-        .card-img { width: 100%; border-radius: 4px; pointer-events: none; }
+        /* Zone Laterali Compatte */
+        .side-zones { position: absolute; display: flex; flex-direction: column; gap: 8px; padding: 10px; top: 50%; transform: translateY(-50%); }
+        .left { left: 5px; } .right { right: 5px; }
+        .zone-slot { width: 60px; height: 85px; border: 1px solid #222; background: rgba(0,0,0,0.3); border-radius: 4px; font-size: 9px; display: flex; align-items: center; justify-content: center; text-align: center; color: #555; position: relative; }
+        .count-tag { position: absolute; bottom: -5px; background: var(--accent); color: white; padding: 1px 4px; border-radius: 3px; font-size: 10px; }
 
-        /* Zone Fisse (Library, Grave, etc) - Più piccole ai bordi */
-        .side-zones { position: absolute; display: flex; flex-direction: column; gap: 10px; padding: 10px; z-index: 10; }
-        .left { left: 0; top: 0; bottom: 0; justify-content: center; }
-        .right { right: 0; top: 0; bottom: 0; justify-content: center; }
+        /* HUD Vita */
+        #hud { position: fixed; right: 80px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+        .life-box { background: #151a1e; border: 1px solid #333; padding: 10px; border-radius: 8px; text-align: center; width: 50px; }
 
-        .zone-slot { width: 60px; height: 85px; border: 1px solid #333; background: rgba(0,0,0,0.5); border-radius: 4px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 9px; color: #555; }
-        .count-tag { position: absolute; bottom: -5px; background: var(--accent); color: white; padding: 1px 4px; border-radius: 3px; font-size: 10px; font-weight: bold; }
-
-        /* HUD */
-        #hud { position: absolute; right: 80px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
-        .life-box { background: #151a1e; border: 1px solid #333; padding: 10px; border-radius: 8px; text-align: center; min-width: 60px; }
-        
         /* Mano */
-        #p-hand { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: -30px; z-index: 1000; }
+        #p-hand { position: fixed; bottom: 5px; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; height: 110px; width: 60%; }
         #p-hand .card-wrapper { margin-left: -35px; }
     </style>
 </head>
 <body>
+
+<button id="settings-btn" onclick="toggleUI()">⚙️ DECK</button>
+
+<div id="top-ui">
+    <input type="text" id="pUrl" placeholder="Moxfield Player Deck">
+    <input type="text" id="cUrl" placeholder="Moxfield AI Deck">
+    <button onclick="loadGame()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:4px; font-weight:bold; cursor:pointer;">START BATTLE</button>
+</div>
 
 <div id="game-board">
     <div class="player-section" id="cpu-side">
@@ -79,20 +77,24 @@
             <div class="zone-slot">Grave</div>
         </div>
         <div class="battlefield-grid">
-            <div class="card-row" id="cpu-row-1"></div> <div class="card-row" id="cpu-row-2"></div> </div>
+            <div class="card-row" id="cpu-row-1"></div>
+            <div class="card-row" id="cpu-row-2"></div>
+        </div>
         <div class="side-zones right">
-            <div class="zone-slot" id="cpu-lib">Lib <span class="count-tag">99</span></div>
-            <div class="zone-slot">Cmd</div>
+            <div class="zone-slot">Lib <span id="c-count" class="count-tag">0</span></div>
+            <div class="zone-slot" id="c-cmd">Cmd</div>
         </div>
     </div>
 
     <div class="player-section" id="player-side">
         <div class="side-zones left">
-            <div class="zone-slot">Cmd</div>
-            <div class="zone-slot" id="player-lib" onclick="draw()">Lib <span class="count-tag">99</span></div>
+            <div class="zone-slot" id="p-cmd">Cmd</div>
+            <div class="zone-slot" onclick="draw('p')">Lib <span id="p-count" class="count-tag">0</span></div>
         </div>
         <div class="battlefield-grid">
-            <div class="card-row" id="player-row-1"></div> <div class="card-row" id="player-row-2"></div> </div>
+            <div class="card-row" id="p-row-1"></div>
+            <div class="card-row" id="p-row-2"></div>
+        </div>
         <div class="side-zones right">
             <div class="zone-slot">Grave</div>
             <div class="zone-slot">Exile</div>
@@ -103,51 +105,81 @@
 <div id="p-hand"></div>
 
 <div id="hud">
-    <div class="life-box" style="color:var(--cpu)">40</div>
-    <div class="life-box" style="color:var(--accent)">40</div>
-    <button onclick="runAI()" style="background:#2ecc71; border:none; border-radius:4px; padding:10px; cursor:pointer; font-weight:bold;">AI</button>
+    <div class="life-box" style="color:var(--cpu)" id="c-hp">40</div>
+    <div class="life-box" style="color:var(--accent)" id="p-hp">40</div>
 </div>
 
 <script>
-    // Logica di base per far funzionare il tutto
-    let deck = [];
+    let decks = { p: [], c: [] };
 
-    async function init() {
-        // Carichiamo un mazzo di test se non c'è URL
-        const resp = await fetch(`https://api.scryfall.com/cards/search?q=t%3Acreature`);
-        const data = await resp.json();
-        deck = data.data.map(c => c.name);
-        for(let i=0; i<7; i++) draw();
+    function toggleUI() { document.getElementById('top-ui').classList.toggle('hidden'); }
+
+    async function loadGame() {
+        const pUrl = document.getElementById('pUrl').value;
+        const cUrl = document.getElementById('cUrl').value;
+        if(!pUrl || !cUrl) return alert("Inserisci i link!");
+
+        const [pD, cD] = await Promise.all([fetchM(pUrl), fetchM(cUrl)]);
+        decks.p = parse(pD); decks.c = parse(cD);
+
+        // UI Transition
+        document.getElementById('top-ui').classList.add('hidden');
+        document.getElementById('settings-btn').style.display = 'block';
+
+        // Setup Command Zone
+        if(pD.commanders) spawn(Object.values(pD.commanders)[0].card.name, 'p-cmd');
+        if(cD.commanders) spawn(Object.values(cD.commanders)[0].card.name, 'c-cmd');
+
+        // Draw initial hands
+        for(let i=0; i<7; i++) { draw('p'); }
+        updateCounts();
     }
 
-    function draw() {
-        if(deck.length === 0) return;
-        const name = deck.pop();
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.draggable = true;
-        wrapper.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image" class="card-img">`;
-        
-        // Sistema di Drag & Drop moderno
-        wrapper.ondragstart = (e) => { e.dataTransfer.setData("text", name); wrapper.style.opacity = "0.4"; };
-        wrapper.ondragend = () => { wrapper.style.opacity = "1"; };
-        
-        document.getElementById('p-hand').appendChild(wrapper);
+    async function fetchM(url) {
+        const id = url.split('/decks/')[1]?.split('?')[0];
+        return fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(r => r.json());
     }
 
-    // Gestione delle righe magnetiche
-    document.querySelectorAll('.card-row').forEach(row => {
+    function parse(data) {
+        let d = [];
+        Object.values(data.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) d.push(c.card.name); });
+        return d.sort(() => Math.random() - 0.5);
+    }
+
+    function draw(who) {
+        if(decks[who].length > 0) {
+            spawn(decks[who].pop(), who === 'p' ? 'p-hand' : 'cpu-row-1');
+            updateCounts();
+        }
+    }
+
+    function spawn(name, zoneId) {
+        const card = document.createElement('div');
+        card.className = 'card-wrapper';
+        card.draggable = true;
+        card.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image" class="card-img">`;
+        
+        card.ondblclick = () => card.classList.toggle('tapped');
+        card.ondragstart = (e) => { e.dataTransfer.setData("text", name); card.style.opacity = "0.4"; };
+        card.ondragend = () => card.style.opacity = "1";
+        
+        document.getElementById(zoneId).appendChild(card);
+    }
+
+    function updateCounts() {
+        document.getElementById('p-count').innerText = decks.p.length;
+        document.getElementById('c-count').innerText = decks.c.length;
+    }
+
+    // Drop Logic per righe magnetiche
+    document.querySelectorAll('.card-row, .zone-slot, #p-hand').forEach(row => {
         row.ondragover = (e) => e.preventDefault();
         row.ondrop = (e) => {
             e.preventDefault();
-            const name = e.dataTransfer.getData("text");
-            // Trova la carta che stiamo trascinando (semplificato)
             const dragged = document.querySelector('.card-wrapper[style*="opacity: 0.4"]');
             if(dragged) row.appendChild(dragged);
         };
     });
-
-    init();
 </script>
 </body>
 </html>
