@@ -2,208 +2,204 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Mirror 4.0 - Perfect Layout</title>
+    <title>MoxSim Mirror - Precision Layout</title>
     <style>
-        :root { 
-            --bg: #0a0a0a; --border: #222; --accent-blue: #3498db; 
-            --accent-orange: #e67e22; --accent-red: #ff4757;
+        :root { --bg: #0d0d0d; --border: #1a1a1a; --text: #888; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: sans-serif; overflow: hidden; color: white; }
+
+        /* Struttura Principale */
+        #app { display: grid; grid-template-columns: 1fr 300px; height: 100vh; }
+
+        /* Tavolo da gioco */
+        #board { display: grid; grid-template-rows: 1fr 1fr; border-right: 2px solid #222; }
+
+        /* Griglia Player (Basata su ugviy.png) */
+        .player-grid { 
+            display: grid; 
+            grid-template-areas: 
+                "others creatures"
+                "hand lands";
+            grid-template-columns: 1fr 2fr; /* Others e Hand sono più stretti */
+            grid-template-rows: 2fr 1fr;    /* Creature e Others occupano più spazio verticale */
+            gap: 2px; background: #222; /* Crea l'effetto linee di divisione */
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Inter', sans-serif; color: #fff; overflow: hidden; }
 
-        /* HEADER */
-        #top-bar { height: 45px; background: #000; display: flex; align-items: center; padding: 0 15px; gap: 10px; border-bottom: 1px solid #333; }
-        input { background: #111; border: 1px solid #444; color: white; padding: 6px; border-radius: 4px; flex: 1; font-size: 12px; }
-        .btn-load { background: #007bff; border: none; color: white; padding: 6px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        /* Griglia CPU (Specchiata invertendo le aree) */
+        .cpu-grid { 
+            display: grid; 
+            grid-template-areas: 
+                "lands hand"
+                "creatures others";
+            grid-template-columns: 2fr 1fr; 
+            grid-template-rows: 1fr 2fr;
+            gap: 2px; background: #222;
+        }
 
-        /* MAIN LAYOUT SEGUENDO UGVIY.PNG */
-        #game-container { display: grid; grid-template-columns: 1fr 280px; height: calc(100vh - 45px); }
+        .zone { background: var(--bg); position: relative; padding: 10px; display: flex; flex-wrap: wrap; gap: 8px; align-content: flex-start; }
+        .zone::after { content: attr(data-label); position: absolute; top: 10px; left: 10px; font-size: 12px; color: #333; text-transform: uppercase; font-weight: bold; pointer-events: none; }
 
-        /* AREA DI GIOCO */
-        #play-area { display: grid; grid-template-rows: 1fr 1fr; border-right: 1px solid #333; }
+        /* Mapping Aree */
+        .z-others { grid-area: others; }
+        .z-creatures { grid-area: creatures; }
+        .z-hand { grid-area: hand; border: 1px solid #1a1a1a; background: #050505; }
+        .z-lands { grid-area: lands; }
 
-        /* ZONE CPU (Specchiate) */
-        .side-cpu { display: grid; grid-template-columns: 1.5fr 1fr 1fr; grid-template-rows: 1fr 1.5fr; transform: rotate(180deg); }
-        
-        /* ZONE PLAYER */
-        .side-player { display: grid; grid-template-columns: 1.5fr 2fr; grid-template-rows: 2fr 1.2fr; }
-
-        .drop-zone { border: 1px solid var(--border); position: relative; display: flex; flex-wrap: wrap; gap: 5px; padding: 10px; align-content: flex-start; }
-        .drop-zone::before { content: attr(data-label); position: absolute; font-size: 20px; font-weight: 800; color: rgba(255,255,255,0.03); text-transform: uppercase; z-index: 0; }
-        
-        /* POSIZIONAMENTO SPECIFICO MANO (Basso Sinistra come da schema) */
-        #p-hand-container { grid-row: 2; grid-column: 1; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.2); }
-        #p-hand { display: flex; gap: -35px; padding: 10px; }
-        #p-hand:hover { gap: 10px; }
-
-        /* SIDEBAR (CONTROLLI E STATISTICHE) */
+        /* Sidebar */
         .sidebar { background: #111; display: flex; flex-direction: column; padding: 15px; gap: 10px; }
-        .stat-group { background: #000; border: 1px solid #333; border-radius: 8px; padding: 12px; text-align: center; }
-        .life-total { font-size: 24px; font-weight: 900; margin: 5px 0; }
+        .stat-card { background: #000; border: 1px solid #222; padding: 15px; text-align: center; border-radius: 4px; }
+        .life { font-size: 28px; font-weight: bold; margin: 10px 0; }
         
-        .zone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
-        .slot { height: 85px; border: 1px solid #222; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 9px; color: #555; background: #050505; }
-        .slot b { color: #aaa; font-size: 14px; }
+        .zone-stack { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .mini-slot { height: 80px; border: 1px solid #222; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #444; }
+        .mini-slot b { color: #fff; font-size: 16px; }
 
-        /* CARTE */
-        .card { width: 75px; aspect-ratio: 2.5/3.5; border-radius: 5px; transition: transform 0.2s; cursor: grab; position: relative; z-index: 10; }
-        .card img { width: 100%; height: 100%; border-radius: 5px; pointer-events: none; }
-        .card:hover { transform: scale(2.6) !important; z-index: 999 !important; box-shadow: 0 10px 25px #000; }
+        /* Carte */
+        .card { width: 80px; aspect-ratio: 2.5/3.5; border-radius: 4px; cursor: grab; transition: transform 0.2s; position: relative; }
+        .card img { width: 100%; height: 100%; border-radius: 4px; pointer-events: none; }
+        .card:hover { transform: scale(3); z-index: 1000; box-shadow: 0 0 20px #000; }
         .tapped { transform: rotate(90deg); }
 
-        /* BOTTONI ACTION */
-        .m-btn { width: 100%; padding: 10px; border-radius: 20px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 11px; margin-top: 5px; }
-        .btn-ai { background: var(--accent-red); color: white; }
-        .btn-draw { background: var(--accent-orange); color: white; }
-        .btn-phase { background: var(--accent-blue); color: white; margin-top: auto; }
+        /* Input Bar */
+        #controls { background: #000; padding: 10px; display: flex; gap: 10px; border-bottom: 1px solid #222; }
+        input { background: #111; border: 1px solid #333; color: white; padding: 5px; flex: 1; border-radius: 3px; }
+        button { background: #3498db; border: none; color: white; padding: 5px 15px; cursor: pointer; font-weight: bold; border-radius: 3px; }
 
-        #stack-overlay { position: absolute; top: 50%; right: 300px; transform: translateY(-50%); width: 100px; height: 140px; border: 2px dashed gold; border-radius: 8px; background: rgba(255,215,0,0.05); display: none; align-items: center; justify-content: center; z-index: 2000; }
+        .btn-ai { background: #e74c3c; width: 100%; padding: 10px; margin-top: 5px; font-weight: bold; color: white; border: none; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="top-bar">
-    <div style="font-weight: 900; color: var(--accent-blue); letter-spacing: 1px;">MOXSIM MIRROR 4.0</div>
-    <input type="text" id="pUrl" placeholder="Player Deck URL">
-    <input type="text" id="cUrl" placeholder="AI Deck URL">
-    <button class="btn-load" onclick="initGame()">CARICA BATTAGLIA</button>
+<div id="controls">
+    <input type="text" id="pUrl" placeholder="Player Moxfield URL">
+    <input type="text" id="cUrl" placeholder="AI Moxfield URL">
+    <button onclick="setupGame()">CARICA BATTAGLIA</button>
 </div>
 
-<div id="game-container">
-    <div id="play-area">
-        <div class="side-cpu">
-            <div class="drop-zone" data-label="Land" id="c-lands"></div>
-            <div class="drop-zone" data-label="Creatures" id="c-creatures"></div>
-            <div class="drop-zone" data-label="Other" id="c-other"></div>
+<div id="app">
+    <div id="board">
+        <div class="cpu-grid">
+            <div class="zone z-lands" id="c-lands" data-label="Lands (CPU)"></div>
+            <div class="zone z-hand" id="c-hand" data-label="Hand (CPU)"></div>
+            <div class="zone z-creatures" id="c-creatures" data-label="Creatures (CPU)"></div>
+            <div class="zone z-others" id="c-others" data-label="Non-Creatures (CPU)"></div>
         </div>
 
-        <div class="side-player">
-            <div class="drop-zone" data-label="Artefact, Enchantement and Battles" id="p-other" style="grid-row: 1;"></div>
-            <div class="drop-zone" data-label="Creatures" id="p-creatures" style="grid-row: 1;"></div>
-            <div id="p-hand-container"><div id="p-hand"></div></div>
-            <div class="drop-zone" data-label="Land" id="p-lands"></div>
+        <div class="player-grid">
+            <div class="zone z-others" id="p-others" data-label="Artefacts / Enchantments"></div>
+            <div class="zone z-creatures" id="p-creatures" data-label="Creatures"></div>
+            <div class="zone z-hand" id="p-hand" data-label="Hand"></div>
+            <div class="zone z-lands" id="p-lands" data-label="Lands"></div>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="zone-grid">
-            <div class="slot">LIB<br><b id="c-lib-val">0</b></div>
-            <div class="slot" id="c-cmd-slot">CMD</div>
+        <div class="zone-stack">
+            <div class="mini-slot">LIB<br><b id="c-lib">0</b></div>
+            <div class="mini-slot" id="c-cmd-slot">CMD</div>
         </div>
-        <div class="stat-group">
-            <div style="color:var(--accent-red); font-size:10px;">CPU LIFE</div>
-            <div class="life-total" style="color:var(--accent-red)">40</div>
-            <button class="m-btn btn-ai" onclick="aiPlay()">AI MOVE</button>
+        <div class="stat-card">
+            <div style="color:#e74c3c">CPU LIFE</div>
+            <div class="life" style="color:#e74c3c">40</div>
+            <button class="btn-ai" onclick="aiMove()">AI MOVE</button>
         </div>
-        <div class="zone-grid">
-            <div class="slot">GRAVE</div>
-            <div class="slot">EXILE</div>
+        <div class="zone-stack">
+            <div class="mini-slot">GRAVE</div>
+            <div class="mini-slot">EXILE</div>
         </div>
 
-        <div style="flex-grow: 1;"></div>
+        <div style="flex-grow: 1"></div>
 
-        <div class="zone-grid">
-            <div class="slot">EXILE</div>
-            <div class="slot">GRAVE</div>
+        <div class="zone-stack">
+            <div class="mini-slot">EXILE</div>
+            <div class="mini-slot">GRAVE</div>
         </div>
-        <div class="stat-group">
-            <div style="color:var(--accent-blue); font-size:10px;">YOUR LIFE</div>
-            <div class="life-total" style="color:var(--accent-blue)">40</div>
-            <button class="m-btn btn-draw" onclick="drawCard('p')">DRAW CARD</button>
+        <div class="stat-card">
+            <div style="color:#3498db">YOUR LIFE</div>
+            <div class="life" style="color:#3498db">40</div>
+            <button class="btn-ai" style="background:#e67e22" onclick="draw('p')">DRAW CARD</button>
         </div>
-        <div class="zone-grid">
-            <div class="slot" id="p-cmd-slot">CMD</div>
-            <div class="slot" style="border-color:var(--accent-blue); cursor:pointer" onclick="drawCard('p')">LIB<br><b id="p-lib-val">0</b></div>
+        <div class="zone-stack">
+            <div class="mini-slot" id="p-cmd-slot">CMD</div>
+            <div class="mini-slot" style="border-color:#3498db">LIB<br><b id="p-lib">0</b></div>
         </div>
-        <button class="m-btn btn-phase" id="phase-display" onclick="stepPhase()">FASE: Iniziale</button>
+        <button class="btn-ai" style="background:#3498db; border-radius: 20px" id="phase-btn" onclick="nextPhase()">FASE: Iniziale</button>
     </div>
 </div>
 
-<div id="stack-overlay">STACK</div>
-
 <script>
-    let pDeck = [], cDeck = [];
-    const phases = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Principale 1", "Attacco", "Blocco", "Danno", "Principale 2", "Finale"];
-    let phaseIdx = 0;
+    let decks = { p: [], c: [] };
+    const phaseList = ["Iniziale", "STAP", "Mantenimento", "Acquisizione", "Main 1", "Attacco", "Blocco", "Danno", "Main 2", "Finale"];
+    let currentPhase = 0;
 
-    async function initGame() {
-        // RESET TOTALE (Pulisce tutto il DOM)
-        document.querySelectorAll('.drop-zone, #p-hand, .slot').forEach(z => {
-            if(!z.id.includes('val')) z.innerHTML = z.id.includes('slot') ? z.innerText : '';
+    async function setupGame() {
+        // RESET TOTALE
+        document.querySelectorAll('.zone, .mini-slot').forEach(z => {
+            if(!z.id.includes('lib')) z.innerHTML = '';
         });
         
-        const pRes = await fetchMox(document.getElementById('pUrl').value);
-        const cRes = await fetchMox(document.getElementById('cUrl').value);
-
-        pDeck = pRes.cards; cDeck = cRes.cards;
+        const pData = await fetchDeck(document.getElementById('pUrl').value);
+        const cData = await fetchDeck(document.getElementById('cUrl').value);
         
-        if(pRes.cmdr) createCard(pRes.cmdr, 'p-cmd-slot');
-        if(cRes.cmdr) createCard(cRes.cmdr, 'c-cmd-slot');
+        decks.p = pData.main; decks.c = cData.main;
+        
+        if(pData.cmdr) spawnCard(pData.cmdr, 'p-cmd-slot');
+        if(cData.cmdr) spawnCard(cData.cmdr, 'c-cmd-slot');
 
-        // Pesca iniziale di 7 (Mazzo 99 -> 92)
-        for(let i=0; i<7; i++) drawCard('p');
-        updateStats();
+        for(let i=0; i<7; i++) draw('p');
+        updateCounters();
     }
 
-    async function fetchMox(url) {
+    async function fetchDeck(url) {
         const id = url.split('/decks/')[1]?.split('?')[0];
-        const data = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(r => r.json());
-        let cards = [];
-        Object.values(data.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) cards.push(c.card.name); });
-        return { cards: cards.sort(() => Math.random() - 0.5), cmdr: data.commanders ? Object.values(data.commanders)[0].card.name : null };
+        const r = await fetch(`https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/'+id)}`).then(res => res.json());
+        let main = [];
+        Object.values(r.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) main.push(c.card.name); });
+        return { main: main.sort(() => Math.random() - 0.5), cmdr: r.commanders ? Object.values(r.commanders)[0].card.name : null };
     }
 
-    function createCard(name, targetId) {
+    function spawnCard(name, zoneId) {
         const card = document.createElement('div');
         card.className = 'card';
         card.draggable = true;
         card.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
         card.ondblclick = () => card.classList.toggle('tapped');
-        card.ondragstart = (e) => { card.id = "c-" + Date.now(); e.dataTransfer.setData("text", card.id); };
-        document.getElementById(targetId).appendChild(card);
-        return card;
+        card.ondragstart = (e) => { card.id = "dt-" + Date.now(); e.dataTransfer.setData("text", card.id); };
+        document.getElementById(zoneId).appendChild(card);
     }
 
-    function drawCard(who) {
-        if(who === 'p' && pDeck.length > 0) {
-            createCard(pDeck.pop(), 'p-hand');
-        } else if(who === 'c' && cDeck.length > 0) {
-            createCard(cDeck.pop(), 'c-creatures');
+    function draw(who) {
+        if(decks[who].length > 0) {
+            spawnCard(decks[who].pop(), who === 'p' ? 'p-hand' : 'c-creatures');
+            updateCounters();
         }
-        updateStats();
     }
 
-    function aiPlay() {
-        if(cDeck.length === 0) return;
-        const stack = document.getElementById('stack-overlay');
-        const name = cDeck.pop();
-        stack.style.display = 'flex';
-        const c = createCard(name, 'stack-overlay');
-        
-        setTimeout(() => {
-            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("island") || name.toLowerCase().includes("swamp");
-            document.getElementById(isLand ? 'c-lands' : 'c-creatures').appendChild(c);
-            stack.style.display = 'none';
-            updateStats();
-        }, 800);
+    function aiMove() {
+        if(decks.c.length > 0) {
+            const name = decks.c.pop();
+            const isLand = name.toLowerCase().includes("land") || name.toLowerCase().includes("swamp") || name.toLowerCase().includes("island");
+            spawnCard(name, isLand ? 'c-lands' : 'c-creatures');
+            updateCounters();
+        }
     }
 
-    function stepPhase() {
-        phaseIdx = (phaseIdx + 1) % phases.length;
-        document.getElementById('phase-display').innerText = "FASE: " + phases[phaseIdx];
+    function nextPhase() {
+        currentPhase = (currentPhase + 1) % phaseList.length;
+        document.getElementById('phase-btn').innerText = "FASE: " + phaseList[currentPhase];
     }
 
-    function updateStats() {
-        document.getElementById('p-lib-val').innerText = pDeck.length;
-        document.getElementById('c-lib-val').innerText = cDeck.length;
+    function updateCounters() {
+        document.getElementById('p-lib').innerText = decks.p.length;
+        document.getElementById('c-lib').innerText = decks.c.length;
     }
 
-    // Drag & Drop Magnetico
-    document.querySelectorAll('.drop-zone, #p-hand, .slot').forEach(zone => {
-        zone.ondragover = e => e.preventDefault();
-        zone.ondrop = e => {
+    // Drag & Drop
+    document.querySelectorAll('.zone, .mini-slot').forEach(z => {
+        z.ondragover = e => e.preventDefault();
+        z.ondrop = e => {
             const id = e.dataTransfer.getData("text");
             const el = document.getElementById(id);
-            if(el) zone.appendChild(el);
+            if(el) z.appendChild(el);
         };
     });
 </script>
