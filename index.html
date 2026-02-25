@@ -3,89 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoxSim Arena - Enhanced</title>
+    <title>MoxSim Arena - Pro Mode</title>
     <style>
         :root { --bg: #0b0d10; --field: #16191d; --accent: #00a2ff; --glow: rgba(0, 162, 255, 0.4); }
-        
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
-
-        /* Sfondo Animato tipo Arena */
-        #vfx-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1b1e23 0%, #0b0d10 100%);
-            z-index: -1; opacity: 0.8;
-        }
-
-        /* Toolbar */
+        #vfx-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1e23 0%, #0b0d10 100%); z-index: -1; }
         #top-bar { height: 50px; background: rgba(0,0,0,0.85); display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #333; backdrop-filter: blur(10px); z-index: 100; position: relative; }
-        input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; outline: none; transition: border 0.3s; }
-        input:focus { border-color: var(--accent); }
-
-        /* Battlefield */
-        #game-world { height: 100vh; width: 100%; position: relative; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; outline: none; }
         
+        #game-world { height: 100vh; width: 100%; position: relative; display: flex; }
+        #main-field { flex-grow: 1; position: relative; overflow: hidden; }
+        
+        /* Sidebar Cimitero */
+        #graveyard { width: 150px; background: rgba(0,0,0,0.4); border-left: 1px solid #333; display: flex; flex-direction: column; align-items: center; padding: 10px; gap: 10px; overflow-y: auto; }
+        .gy-card { width: 100px; opacity: 0.6; grayscale(50%); margin-bottom: -80px; transition: 0.3s; }
+        .gy-card:hover { opacity: 1; margin-bottom: 5px; }
+
         /* Carte */
-        .card-wrapper { 
-            position: absolute; width: 115px; cursor: grab;
-            animation: cardEnter 0.4s ease-out;
-            transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28);
-        }
-        @keyframes cardEnter { from { opacity: 0; transform: translateY(20px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
-
-        .card-img { width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
-        
-        .card-wrapper:hover .card-img { border-color: var(--accent); box-shadow: 0 0 15px var(--glow); }
-
+        .card-wrapper { position: absolute; width: 110px; cursor: grab; z-index: 10; transition: transform 0.2s; }
+        .card-img { width: 100%; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.8); }
         .tapped { transform: rotate(90deg) !important; }
 
-        /* Mano Stile Arena */
-        #hand { 
-            position: fixed; bottom: -20px; width: 100%; height: 180px; 
-            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 30px;
-            z-index: 1000; pointer-events: none;
-        }
+        /* Mano */
+        #hand { position: fixed; bottom: -10px; width: calc(100% - 150px); height: 160px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 20px; z-index: 1000; pointer-events: none; }
         #hand .card-wrapper { position: relative; margin-left: -40px; pointer-events: auto; }
-        #hand .card-wrapper:hover { transform: translateY(-60px) scale(1.6); z-index: 2000; }
+        #hand .card-wrapper:hover { transform: translateY(-50px) scale(1.5); z-index: 2000; }
 
-        /* UI HUD */
-        #side-menu { position: absolute; right: 20px; top: 70px; display: flex; flex-direction: column; gap: 15px; z-index: 100; }
-        .stat-box { background: rgba(20,20,20,0.9); padding: 12px; border-radius: 12px; border: 1px solid #444; text-align: center; backdrop-filter: blur(5px); }
-        .hp-text { font-size: 28px; font-weight: bold; color: #ff4757; text-shadow: 0 0 10px rgba(255,71,87,0.3); }
-        .btn-action { background: #333; color: white; border: 1px solid #555; padding: 6px 12px; cursor: pointer; border-radius: 6px; margin: 3px; transition: 0.2s; }
-        .btn-action:hover { background: var(--accent); border-color: white; transform: translateY(-2px); }
-
+        /* HUD */
+        #side-menu { position: absolute; right: 170px; top: 70px; display: flex; flex-direction: column; gap: 10px; z-index: 100; }
+        .stat-box { background: rgba(20,20,20,0.9); padding: 10px; border-radius: 10px; border: 1px solid #444; text-align: center; min-width: 100px; }
+        .btn-action { background: #333; color: white; border: 1px solid #555; padding: 5px 10px; cursor: pointer; border-radius: 5px; width: 100%; margin-top: 5px; }
+        .btn-action:hover { background: var(--accent); }
+        .btn-mulligan { background: #ff4757; font-size: 10px; }
     </style>
 </head>
 <body>
 
 <div id="vfx-bg"></div>
-
 <div id="top-bar">
-    <b style="color:var(--accent); letter-spacing: 1px;">MOXSIM <span style="color:white">ARENA</span></b>
-    <input type="text" id="deckUrl" placeholder="Incolla link Moxfield (es. https://www.moxfield.com/decks/...)">
-    <button class="btn-action" style="background:var(--accent); border:none;" onclick="importDeck()">CARICA</button>
-</div>
-
-<div id="side-menu">
-    <div class="stat-box">
-        <div style="font-size: 10px; color: #aaa;">LIFE TOTAL</div>
-        <div class="hp-text" id="hp-val">40</div>
-        <button class="btn-action" onclick="updateHP(1)">+</button>
-        <button class="btn-action" onclick="updateHP(-1)">-</button>
-    </div>
-    <div class="stat-box">
-        <div id="deck-count" style="font-size: 18px; font-weight: bold;">0</div>
-        <div style="font-size: 10px; color: #aaa; margin-bottom: 5px;">CARTE RIMANENTI</div>
-        <button class="btn-action" style="width:100%; background: #444;" onclick="drawCard()">PESCA</button>
-    </div>
-    <div class="stat-box">
-        <button class="btn-action" style="width:100%" onclick="spawnToken('Serpent', 'https://api.scryfall.com/cards/named?exact=Serpent&format=image')">🐍 Serpente 1/1</button>
-        <button class="btn-action" style="width:100%" onclick="spawnToken('Treasure', 'https://api.scryfall.com/cards/named?exact=Treasure&format=image')">🪙 Tesoro</button>
-    </div>
+    <b style="color:var(--accent)">MOXSIM ARENA</b>
+    <input type="text" id="deckUrl" placeholder="URL Moxfield...">
+    <button class="btn-action" style="width:auto; background:var(--accent)" onclick="importDeck()">CARICA</button>
 </div>
 
 <div id="game-world">
-    <div id="player-field" style="height: 100%; width: 100%;"></div>
+    <div id="main-field" ondragover="event.preventDefault()" ondrop="dropToField(event)">
+        <div id="side-menu">
+            <div class="stat-box">
+                <div style="font-size:10px">LIFE</div>
+                <div id="hp-val" style="font-size:24px; color:#ff4757; font-weight:bold">40</div>
+                <button class="btn-action" onclick="updateHP(1)">+</button>
+                <button class="btn-action" onclick="updateHP(-1)">-</button>
+            </div>
+            <div class="stat-box">
+                <div id="deck-count" style="font-size:18px">0</div>
+                <button class="btn-action" onclick="drawCard()">PESCA</button>
+                <button class="btn-action btn-mulligan" onclick="mulligan()">MULLIGAN</button>
+            </div>
+        </div>
+        <div id="player-field" style="width:100%; height:100%"></div>
+    </div>
+    
+    <div id="graveyard">
+        <div style="font-size:10px; color:#aaa">GRAVEYARD</div>
+    </div>
 </div>
 
 <div id="hand"></div>
@@ -95,36 +76,39 @@
 
 <script>
     let deck = [];
+    let initialDeck = [];
     let life = 40;
 
-    function playSnd(id) { 
-        const s = document.getElementById(id);
-        s.currentTime = 0;
-        s.play().catch(() => {}); // Previene errori se l'utente non ha ancora interagito
-    }
-
+    function playSnd(id) { document.getElementById(id).currentTime = 0; document.getElementById(id).play().catch(()=>{}); }
     function updateHP(v) { life += v; document.getElementById('hp-val').innerText = life; }
 
     async function importDeck() {
         const url = document.getElementById('deckUrl').value;
         const id = url.split('/decks/')[1]?.split('?')[0];
-        if(!id) return alert("URL Moxfield non valido!");
-
         const proxy = "https://corsproxy.io/?";
         const target = `https://api.moxfield.com/v2/decks/all/${id}`;
 
         try {
             const resp = await fetch(proxy + encodeURIComponent(target));
             const data = await resp.json();
-            deck = [];
+            initialDeck = [];
             Object.values(data.mainboard).forEach(c => {
-                for(let i=0; i<c.quantity; i++) deck.push({name: c.card.name, img: c.card.scryfall_uri});
+                for(let i=0; i<c.quantity; i++) initialDeck.push({name: c.card.name});
             });
-            deck.sort(() => Math.random() - 0.5);
-            document.getElementById('deck-count').innerText = deck.length;
-            alert("Mazzo di " + data.name + " pronto!");
-        } catch(e) { alert("Errore di connessione. Riprova."); }
+            resetGame();
+            alert("Mazzo caricato!");
+        } catch(e) { alert("Errore caricamento."); }
     }
+
+    function resetGame() {
+        deck = [...initialDeck].sort(() => Math.random() - 0.5);
+        document.getElementById('deck-count').innerText = deck.length;
+        document.getElementById('hand').innerHTML = '';
+        document.getElementById('player-field').innerHTML = '';
+        document.getElementById('graveyard').innerHTML = '<div style="font-size:10px; color:#aaa">GRAVEYARD</div>';
+    }
+
+    function mulligan() { if(confirm("Rimescolare tutto nel mazzo?")) resetGame(); }
 
     function drawCard() {
         if(deck.length === 0) return;
@@ -134,56 +118,42 @@
         addCardToUI(card.name, true);
     }
 
-    function spawnToken(name, customImg) {
-        addCardToUI(name, false, customImg);
-    }
-
-    function addCardToUI(name, toHand, customImg = null) {
+    function addCardToUI(name, toHand) {
         const wrapper = document.createElement('div');
         wrapper.className = 'card-wrapper';
-        
         const img = document.createElement('img');
-        img.src = customImg ? customImg : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
+        img.src = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
         img.className = 'card-img';
-        
         wrapper.appendChild(img);
 
-        wrapper.ondblclick = () => {
-            if(wrapper.parentElement.id === 'hand') return;
-            playSnd('snd-tap');
-            wrapper.classList.toggle('tapped');
+        wrapper.ondblclick = () => { if(wrapper.parentElement.id !== 'hand') { playSnd('snd-tap'); wrapper.classList.toggle('tapped'); } };
+        
+        // Tasto destro per mandare al cimitero
+        wrapper.oncontextmenu = (e) => {
+            e.preventDefault();
+            const gy = document.getElementById('graveyard');
+            wrapper.className = 'gy-card';
+            wrapper.style.position = 'relative';
+            wrapper.style.left = '0'; wrapper.style.top = '0';
+            gy.appendChild(wrapper);
         };
 
-        // Drag Logic
         wrapper.onmousedown = function(e) {
             if(e.button !== 0) return;
             let shiftX = e.clientX - wrapper.getBoundingClientRect().left;
             let shiftY = e.clientY - wrapper.getBoundingClientRect().top;
-
-            function moveAt(px, py) {
-                wrapper.style.left = px - shiftX + 'px';
-                wrapper.style.top = py - shiftY + 'px';
-            }
-
+            function moveAt(px, py) { wrapper.style.left = px - shiftX + 'px'; wrapper.style.top = py - shiftY + 'px'; }
             function onMouseMove(e) {
-                if(wrapper.parentElement.id === 'hand') {
-                    document.getElementById('player-field').appendChild(wrapper);
-                    wrapper.style.position = 'absolute';
-                }
+                if(wrapper.parentElement.id === 'hand') { document.getElementById('player-field').appendChild(wrapper); wrapper.style.position = 'absolute'; }
                 moveAt(e.clientX, e.clientY);
             }
-
             document.addEventListener('mousemove', onMouseMove);
             document.onmouseup = () => document.removeEventListener('mousemove', onMouseMove);
         };
 
         if(toHand) document.getElementById('hand').appendChild(wrapper);
-        else {
-            wrapper.style.left = "40%"; wrapper.style.top = "40%";
-            document.getElementById('player-field').appendChild(wrapper);
-        }
+        else document.getElementById('player-field').appendChild(wrapper);
     }
 </script>
-
 </body>
 </html>
