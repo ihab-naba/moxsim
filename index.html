@@ -3,38 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoxSim Arena - AI Battle Mode</title>
+    <title>MoxSim Arena - AI Intelligence</title>
     <style>
         :root { --bg: #0b0d10; --accent: #00a2ff; --cpu: #ff4757; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
         #vfx-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1e23 0%, #0b0d10 100%); z-index: -1; }
         
         #top-bar { height: 50px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #333; z-index: 100; }
-        input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; outline: none; }
 
         #game-world { height: calc(100vh - 50px); width: 100%; display: flex; }
         
-        /* Campi di Battaglia */
         #battle-arena { flex-grow: 1; display: flex; flex-direction: column; position: relative; border-right: 1px solid #333; }
-        #cpu-field { flex: 1; background: rgba(255, 71, 87, 0.03); border-bottom: 2px dashed #444; position: relative; }
+        #cpu-field { flex: 1; background: rgba(255, 71, 87, 0.03); border-bottom: 2px dashed #444; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; }
         #player-field { flex: 1; position: relative; }
         
-        .field-label { position: absolute; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.2); text-transform: uppercase; pointer-events: none; top: 10px; }
+        .field-label { position: absolute; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: bold; color: rgba(255,255,255,0.1); text-transform: uppercase; pointer-events: none; z-index: 1; }
 
-        /* Sidebar Destra */
         #right-sidebar { width: 160px; background: rgba(0,0,0,0.5); display: flex; flex-direction: column; padding: 10px; gap: 10px; }
         .zone-container { flex: 1; border: 1px dashed #444; border-radius: 8px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 5px; }
         .zone-label { font-size: 10px; color: #888; font-weight: bold; margin-bottom: 5px; }
         
-        /* Command Zone */
-        #command-zone { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 110px; height: 150px; border: 2px dashed var(--accent); border-radius: 10px; background: rgba(0, 162, 255, 0.05); z-index: 20; }
+        #command-zone { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); width: 110px; height: 150px; border: 2px dashed var(--accent); border-radius: 10px; background: rgba(0, 162, 255, 0.05); z-index: 20; display: flex; align-items: center; justify-content: center; }
 
-        /* HUD Contatori */
         #stat-panel { position: absolute; right: 180px; top: 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
-        .stat-card { background: rgba(15,15,15,0.95); border: 1px solid #444; border-radius: 8px; padding: 10px; text-align: center; min-width: 80px; }
+        .stat-card { background: rgba(15,15,15,0.95); border: 1px solid #444; border-radius: 8px; padding: 10px; text-align: center; min-width: 85px; }
         .stat-val { font-size: 20px; font-weight: bold; }
         
-        /* Carte */
         .card-wrapper { position: absolute; width: 100px; cursor: grab; z-index: 50; transition: transform 0.2s; }
         .card-img { width: 100%; border-radius: 6px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); pointer-events: none; }
         .tapped { transform: rotate(90deg) !important; }
@@ -43,41 +38,46 @@
         #hand { position: fixed; bottom: 0; left: 0; width: calc(100% - 160px); height: 140px; display: flex; justify-content: center; align-items: flex-end; padding-bottom: 10px; pointer-events: none; z-index: 1000; }
         #hand .card-wrapper { position: relative; margin-left: -35px; pointer-events: auto; }
         #hand .card-wrapper:hover { transform: translateY(-40px) scale(1.4); z-index: 1100; }
+
+        .btn-action { background: #333; color: white; border: 1px solid #555; padding: 5px; cursor: pointer; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .btn-action:hover { background: var(--accent); }
     </style>
 </head>
 <body>
 
 <div id="vfx-bg"></div>
 <div id="top-bar">
-    <b style="color:var(--accent)">MOXSIM ARENA BATTLE</b>
-    <input type="text" id="deckUrl" placeholder="Mazzo Player (Moxfield)">
+    <b style="color:var(--accent)">MOXSIM ARENA AI</b>
+    <input type="text" id="deckUrl" placeholder="Il Tuo Mazzo (Moxfield)">
     <input type="text" id="cpuUrl" placeholder="Mazzo AI (Moxfield)">
-    <button class="btn-action" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer;" onclick="startBattle()">START BATTLE</button>
+    <button class="btn-action" style="background:var(--accent); border:none; padding:8px 15px;" onclick="startBattle()">START BATTLE</button>
 </div>
 
 <div id="game-world">
     <div id="battle-arena">
-        <div id="command-zone"><div class="zone-label" style="text-align:center">COMMAND</div></div>
+        <div id="command-zone"><div class="zone-label">COMMAND</div></div>
         
-        <div id="cpu-field"><div class="field-label">ZONA CPU / AI</div></div>
-        <div id="player-field"><div class="field-label">IL TUO CAMPO</div></div>
+        <div id="cpu-field"><div class="field-label" style="top:10px">ZONA CPU / AI</div></div>
+        <div id="player-field"><div class="field-label" style="bottom:10px">IL TUO CAMPO</div></div>
 
         <div id="stat-panel">
             <div class="stat-card">
                 <div class="zone-label">LIFE</div>
                 <div id="hp-val" class="stat-val" style="color:var(--cpu)">40</div>
-                <button onclick="updateStat('hp', 1)">+</button><button onclick="updateStat('hp', -1)">-</button>
+                <button class="btn-action" onclick="updateStat('hp', 1)">+</button>
+                <button class="btn-action" onclick="updateStat('hp', -1)">-</button>
             </div>
             <div class="stat-card">
                 <div class="zone-label">POISON</div>
                 <div id="poison-val" class="stat-val" style="color:#2ecc71">0</div>
-                <button onclick="updateStat('poison', 1)">+</button>
+                <button class="btn-action" onclick="updateStat('poison', 1)">+</button>
             </div>
             <div class="stat-card">
                 <div class="zone-label">TAX</div>
                 <div id="tax-val" class="stat-val" style="color:var(--accent)">0</div>
             </div>
-            <button style="background:#2ecc71; color:black; font-weight:bold; margin-top:5px;" onclick="nextTurn()">TURN +</button>
+            <button class="btn-action" style="background:#2ecc71; color:black;" onclick="nextTurn()">TURN +</button>
+            <button class="btn-action" style="background:#f1c40f; color:black; margin-top:5px;" onclick="executeSmartAiTurn()">Mente AI</button>
         </div>
     </div>
 
@@ -86,18 +86,68 @@
         <div id="exile" class="zone-container"><div class="zone-label">EXILE</div></div>
         <div id="deck-zone" class="zone-container">
             <div class="zone-label">DECK</div>
-            <div id="deck-count" style="font-size:20px">0</div>
-            <button onclick="drawCard()">PESCA</button>
+            <div id="deck-count" style="font-size:20px; font-weight:bold;">0</div>
+            <button class="btn-action" onclick="drawCard()">PESCA</button>
         </div>
     </div>
 </div>
 
 <div id="hand"></div>
 
+<audio id="snd-draw" src="https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3"></audio>
+<audio id="snd-tap" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+
 <script>
-    let deck = [];
+    let playerDeck = [];
+    let cpuDeck = [];
     let stats = { hp: 40, poison: 0, tax: 0 };
 
+    // --- MODULO MENTE AI ---
+    const AI_BRAIN = {
+        analyzeBoard: function() {
+            const playerPermanents = Array.from(document.querySelectorAll('#player-field .card-wrapper'));
+            const cpuPermanents = Array.from(document.querySelectorAll('#cpu-field .card-wrapper'));
+            
+            console.log("AI sta analizzando i dati visivi del campo...");
+            return { playerSize: playerPermanents.length, cpuSize: cpuPermanents.length };
+        },
+
+        decideMove: function(analysis) {
+            // L'AI rileva la minaccia numerica
+            if (analysis.playerSize > analysis.cpuSize) {
+                return "DEFENSIVE_MOVE"; 
+            }
+            return "AGGRESSIVE_MOVE";
+        }
+    };
+
+    async function executeSmartAiTurn() {
+        const analysis = AI_BRAIN.analyzeBoard();
+        const strategy = AI_BRAIN.decideMove(analysis);
+        
+        console.log("Strategia scelta: " + strategy);
+        
+        // Esecuzione basata sulla strategia
+        if(strategy === "DEFENSIVE_MOVE") {
+            playSnd('snd-draw');
+            // L'AI gioca la prima carta del suo mazzo per difendersi
+            if(cpuDeck.length > 0) {
+                const card = cpuDeck.pop();
+                addCardToUI(card.name, false, false, true);
+                console.log("AI gioca una carta difensiva: " + card.name);
+            }
+        } else {
+            console.log("AI si sente sicura. Attende o attacca.");
+            if(cpuDeck.length > 0) {
+                const card = cpuDeck.pop();
+                addCardToUI(card.name, false, false, true);
+            }
+        }
+    }
+    // -----------------------
+
+    function playSnd(id) { const s = document.getElementById(id); if(s) { s.currentTime = 0; s.play().catch(()=>{}); } }
+    
     function updateStat(type, val) {
         stats[type] += val;
         document.getElementById(`${type}-val`).innerText = stats[type];
@@ -112,35 +162,49 @@
     }
 
     async function startBattle() {
-        const playerUrl = document.getElementById('deckUrl').value;
-        if(!playerUrl) return alert("Inserisci il tuo mazzo!");
-        
-        const data = await fetchMoxfield(playerUrl);
-        deck = [];
-        Object.values(data.mainboard).forEach(c => {
-            for(let i=0; i<c.quantity; i++) deck.push({name: c.card.name});
-        });
-        deck.sort(() => Math.random() - 0.5);
-        
-        // Reset e Comandante
-        document.getElementById('player-field').innerHTML = '<div class="field-label">IL TUO CAMPO</div>';
+        const pUrl = document.getElementById('deckUrl').value;
+        const cUrl = document.getElementById('cpuUrl').value;
+        if(!pUrl || !cUrl) return alert("Inserisci entrambi i link mazzi!");
+
+        try {
+            const pData = await fetchMoxfield(pUrl);
+            const cData = await fetchMoxfield(cUrl);
+
+            playerDeck = [];
+            Object.values(pData.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) playerDeck.push({name: c.card.name}); });
+            playerDeck.sort(() => Math.random() - 0.5);
+
+            cpuDeck = [];
+            Object.values(cData.mainboard).forEach(c => { for(let i=0; i<c.quantity; i++) cpuDeck.push({name: c.card.name}); });
+            cpuDeck.sort(() => Math.random() - 0.5);
+
+            resetTable(pData, cData);
+            alert("Battaglia Iniziata!");
+        } catch(e) { alert("Errore caricamento mazzi."); }
+    }
+
+    function resetTable(pData, cData) {
+        document.getElementById('player-field').innerHTML = '<div class="field-label" style="bottom:10px">IL TUO CAMPO</div>';
+        document.getElementById('cpu-field').innerHTML = '<div class="field-label" style="top:10px">ZONA CPU / AI</div>';
         document.getElementById('hand').innerHTML = '';
-        if(data.commanders) {
-            Object.values(data.commanders).forEach(c => addCardToUI(c.card.name, false, true));
-        }
+        document.getElementById('command-zone').innerHTML = '<div class="zone-label">COMMAND</div>';
         
+        if(pData.commanders) Object.values(pData.commanders).forEach(c => addCardToUI(c.card.name, false, true));
+        if(cData.commanders) Object.values(cData.commanders).forEach(c => addCardToUI(c.card.name, false, false, true));
+
         for(let i=0; i<7; i++) drawCard();
-        document.getElementById('deck-count').innerText = deck.length;
+        document.getElementById('deck-count').innerText = playerDeck.length;
     }
 
     function drawCard() {
-        if(deck.length === 0) return;
-        const card = deck.pop();
+        if(playerDeck.length === 0) return;
+        playSnd('snd-draw');
+        const card = playerDeck.pop();
         addCardToUI(card.name, true);
-        document.getElementById('deck-count').innerText = deck.length;
+        document.getElementById('deck-count').innerText = playerDeck.length;
     }
 
-    function addCardToUI(name, toHand, toCommand = false) {
+    function addCardToUI(name, toHand, toCommand = false, isCpu = false) {
         const wrapper = document.createElement('div');
         wrapper.className = 'card-wrapper';
         const img = document.createElement('img');
@@ -148,32 +212,35 @@
         img.className = 'card-img';
         wrapper.appendChild(img);
 
-        wrapper.ondblclick = () => wrapper.classList.toggle('tapped');
+        wrapper.ondblclick = () => { playSnd('snd-tap'); wrapper.classList.toggle('tapped'); };
         
         wrapper.oncontextmenu = (e) => {
             e.preventDefault();
-            const choice = prompt("1: Graveyard, 2: Exile, 3: Command Zone, 4: CPU Field");
+            const choice = prompt("1: Graveyard, 2: Exile, 3: Command Zone, 4: Move to Opponent");
             if(choice === "1") sendToZone(wrapper, 'graveyard');
             else if(choice === "2") sendToZone(wrapper, 'exile');
             else if(choice === "3") {
-                updateStat('tax', 2); // Aggiunge tassa auto
+                updateStat('tax', 2);
                 wrapper.className = 'card-wrapper';
                 wrapper.style.position = 'relative';
                 wrapper.style.left='0'; wrapper.style.top='0';
                 document.getElementById('command-zone').appendChild(wrapper);
             }
             else if(choice === "4") {
+                wrapper.style.position = 'relative';
+                wrapper.style.left='0'; wrapper.style.top='0';
                 document.getElementById('cpu-field').appendChild(wrapper);
             }
         };
 
         wrapper.onmousedown = function(e) {
             if(e.button !== 0) return;
-            let shiftX = e.clientX - wrapper.getBoundingClientRect().left;
-            let shiftY = e.clientY - wrapper.getBoundingClientRect().top;
+            let rect = wrapper.getBoundingClientRect();
+            let shiftX = e.clientX - rect.left;
+            let shiftY = e.clientY - rect.top;
             
             function moveAt(e) {
-                if(wrapper.parentElement.id === 'hand' || wrapper.parentElement.id === 'command-zone') {
+                if(wrapper.parentElement.id === 'hand' || wrapper.parentElement.id === 'command-zone' || wrapper.parentElement.id === 'cpu-field') {
                     document.getElementById('player-field').appendChild(wrapper);
                     wrapper.style.position = 'absolute';
                 }
@@ -185,9 +252,18 @@
         };
         wrapper.ondragstart = () => false;
 
-        if(toCommand) document.getElementById('command-zone').appendChild(wrapper);
-        else if(toHand) document.getElementById('hand').appendChild(wrapper);
-        else document.getElementById('player-field').appendChild(wrapper);
+        if(isCpu) {
+            wrapper.style.position = 'relative';
+            wrapper.style.left='0'; wrapper.style.top='0';
+            document.getElementById('cpu-field').appendChild(wrapper);
+        } else if(toCommand) {
+            wrapper.style.position = 'relative';
+            document.getElementById('command-zone').appendChild(wrapper);
+        } else if(toHand) {
+            document.getElementById('hand').appendChild(wrapper);
+        } else {
+            document.getElementById('player-field').appendChild(wrapper);
+        }
     }
 
     function sendToZone(el, id) {
