@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoxSim - Pro Arena Edition</title>
+    <style>
+        :root { --bg: #0b0d10; --field: #16191d; --accent: #00a2ff; --hp-lp: #ed2124; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden; }
+        
+        /* Layout */
+        #ui-layer { position: absolute; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        #ui-layer * { pointer-events: auto; }
+        
+        #top-bar { height: 50px; background: rgba(0,0,0,0.9); display: flex; align-items: center; padding: 0 20px; gap: 10px; border-bottom: 1px solid #333; }
+        input { background: #222; border: 1px solid #444; color: white; padding: 8px; flex-grow: 1; border-radius: 4px; }
+        
+        /* Battlefield */
+        #game-world { height: 100vh; width: 100%; background: var(--field); position: relative; }
+        #cpu-field { height: 40%; border-bottom: 1px dashed #333; display: flex; align-items: center; justify-content: center; }
+        #player-field { height: 40%; display: flex; align-items: center; justify-content: center; position: relative; }
+
+        /* Carte e Segnalini */
+        .card-wrapper { position: absolute; width: 110px; transition: transform 0.2s; cursor: grab; }
+        .card-img { width: 110px; border-radius: 7px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .tapped { transform: rotate(90deg) !important; }
+        .counter-badge { 
+            position: absolute; top: -10px; right: -10px; background: #222; border: 2px solid var(--accent);
+            border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 14px; z-index: 5;
+        }
+
+        /* Mano */
+        #hand { 
+            position: fixed; bottom: 0; width: 100%; height: 150px; 
+            display: flex; justify-content: center; align-items: flex-end; padding-bottom: 10px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+        #hand .card-wrapper { position: relative; margin-left: -30px; transition: 0.3s; }
+        #hand .card-wrapper:hover { transform: translateY(-50px) scale(1.5); z-index: 1000; }
+
+        /* Contatori laterali */
+        #side-menu { position: absolute; right: 20px; top: 70px; display: flex; flex-direction: column; gap: 15px; }
+        .stat-box { background: rgba(0,0,0,0.8); padding: 10px; border-radius: 10px; border: 1px solid #444; text-align: center; }
+        .btn-action { background: #444; color: white; border: none; padding: 5px; cursor: pointer; border-radius: 3px; margin: 2px; }
+        .btn-action:hover { background: var(--accent); }
+    </style>
+</head>
+<body>
+
+<div id="ui-layer">
+    <div id="top-bar">
+        <b style="color:var(--accent)">MOXSIM ARENA</b>
+        <input type="text" id="deckUrl" placeholder="Incolla link Moxfield...">
+        <button class="btn-action" style="background:var(--accent)" onclick="importDeck()">CARICA MAZZO</button>
+    </div>
+
+    <div id="side-menu">
+        <div class="stat-box">
+            <div>PLAYER HP</div>
+            <div id="hp-val" style="font-size:24px; color:#ed2124">40</div>
+            <button class="btn-action" onclick="updateHP(1)">+</button>
+            <button class="btn-action" onclick="updateHP(-1)">-</button>
+        </div>
+        <div class="stat-box">
+            <div>DECK</div>
+            <div id="deck-count">0</div>
+            <button class="btn-action" style="width:100%" onclick="drawCard()">PESCA</button>
+        </div>
+        <div class="stat-box">
+            <div>TOKEN</div>
+            <button class="btn-action" onclick="spawnToken('Serpente 1/1')">🐍 Serpente</button>
+            <button class="btn-action" onclick="spawnToken('Tesoro')">🪙 Tesoro</button>
+        </div>
+    </div>
+</div>
+
+<div id="game-world">
+    <div id="cpu-field">
+        <div style="color:#555; border: 2px dashed #333; padding: 20px; border-radius: 10px;">ZONA CPU (Trascina qui le carte avversarie)</div>
+    </div>
+    <div id="player-field"></div>
+</div>
+
+<div id="hand"></div>
+
+<script>
+    let deck = [];
+    let life = 40;
+
+    function updateHP(v) { life += v; document.getElementById('hp-val').innerText = life; }
+
+    async function importDeck() {
+        const url = document.getElementById('deckUrl').value;
+        const id = url.split('/decks/')[1]?.split('?')[0];
+        if(!id) return alert("URL non valido");
+
+        const proxy = "https://corsproxy.io/?";
+        const target = `https://api.moxfield.com/v2/decks/all/${id}`;
+
+        try {
+            const resp = await fetch(proxy + encodeURIComponent(target));
+            const data = await resp.json();
+            deck = [];
+            Object.values(data.mainboard).forEach(c => {
+                for(let i=0; i<c.quantity; i++) deck.push(c.card.name);
+            });
+            // Shuffle
+            deck.sort(() => Math.random() - 0.5);
+            document.getElementById('deck-count').innerText = deck.length;
+            alert("Mazzo caricato! Clicca PESCA per iniziare.");
+        } catch(e) { alert("Errore. Assicurati che il mazzo sia pubblico."); }
+    }
+
+    function drawCard() {
+        if(deck.length === 0) return;
+        const name = deck.pop();
+        document.getElementById('deck-count').innerText = deck.length;
+        addCardToUI(name, true);
+    }
+
+    function spawnToken(name) {
+        addCardToUI(name, false);
+    }
+
+    function addCardToUI(name, toHand) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        
+        const img = document.createElement('img');
+        img.src = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image&version=normal`;
+        img.className = 'card-img';
+        
+        wrapper.appendChild(img);
+
+        // Segnalino +1/+1
+        let count = 0;
+        wrapper.ondblclick = (e) => {
+            if(wrapper.parentElement.id === 'hand') return;
+            wrapper.classList.toggle('tapped');
+        };
+
+        // Click destro per aggiungere segnalini
+        wrapper.oncontextmenu = (e) => {
+            e.preventDefault();
+            count++;
+            let badge = wrapper.querySelector('.counter-badge');
+            if(!badge) {
+                badge = document.createElement('div');
+                badge.className = 'counter-badge';
+                wrapper.appendChild(badge);
+            }
+            badge.innerText = count;
+        };
+
+        // Drag logic
+        wrapper.onmousedown = function(e) {
+            if(e.button !== 0) return;
+            let shiftX = e.clientX - wrapper.getBoundingClientRect().left;
+            let shiftY = e.clientY - wrapper.getBoundingClientRect().top;
+
+            function moveAt(px, py) {
+                wrapper.style.left = px - shiftX + 'px';
+                wrapper.style.top = py - shiftY + 'px';
+            }
+
+            function onMouseMove(e) {
+                if(wrapper.parentElement.id === 'hand') {
+                    document.getElementById('player-field').appendChild(wrapper);
+                    wrapper.style.position = 'absolute';
+                }
+                moveAt(e.clientX, e.clientY);
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.onmouseup = () => document.removeEventListener('mousemove', onMouseMove);
+        };
+
+        if(toHand) document.getElementById('hand').appendChild(wrapper);
+        else {
+            wrapper.style.left = "50%"; wrapper.style.top = "50%";
+            document.getElementById('player-field').appendChild(wrapper);
+        }
+    }
+</script>
+
+</body>
+</html>
