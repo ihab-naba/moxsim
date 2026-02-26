@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V28 (Stable & Dynamic)</title>
+    <title>MoxSim Arena - Goldfish V29 (Back to Basics)</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -36,9 +36,8 @@
         #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; }
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
 
-        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; flex-direction: column; gap: 10px; max-height: 80vh; overflow-y: auto; width: 300px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .btn-token { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; display: flex; align-items: center; gap: 10px; text-align: left; }
-        .btn-token img { width: 35px; border-radius: 4px; }
+        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; flex-wrap: wrap; justify-content: center; max-width: 400px; gap: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .btn-token { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; min-width: 100px; }
         .btn-token:hover { background: var(--mox-blue); }
     </style>
 </head>
@@ -86,10 +85,10 @@
 <div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
 <div id="token-menu">
-    <div id="token-list" style="display:contents;">
-        </div>
-    <hr style="width:100%; border:0; border-top:1px solid #333; margin:10px 0;">
-    <button class="btn-token" onclick="createToken('Treasure', 'Artifact', 'https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=normal')"><img src="https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=small"> Tesoro</button>
+    <button class="btn-token" onclick="createToken('Soldato', 'Creature', 'https://cards.scryfall.io/normal/front/1/1/11d88275-cf08-4e4b-91b3-4f9e6129881a.jpg')">Soldato 1/1</button>
+    <button class="btn-token" onclick="createToken('Tesoro', 'Artifact', 'https://cards.scryfall.io/normal/front/0/e/0e796062-8495-4676-96b6-3a6a9b44122d.jpg')">Tesoro</button>
+    <button class="btn-token" onclick="createToken('Indizio', 'Artifact', 'https://cards.scryfall.io/normal/front/e/0/e089225-8373-42e1-a080-60f1b5250462.jpg')">Indizio</button>
+    <button class="btn-token" onclick="createToken('Zombie', 'Creature', 'https://cards.scryfall.io/normal/front/2/a/2a4b87e2-8924-406a-93a0-f80879612347.jpg')">Zombie 2/2</button>
     <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
 </div>
 
@@ -102,35 +101,26 @@
         let deckUrl = urlParams.get('deck') || "";
         const deckId = deckUrl.match(/\/decks\/([^?\/]+)/)?.[1] || deckUrl.split('/').pop();
         if (!deckId) return;
+
         try {
             const proxy = "https://api.allorigins.win/get?url=";
             const target = encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`);
             const response = await fetch(proxy + target);
             const json = await response.json();
             const data = JSON.parse(json.contents);
-            
+
+            // Carica Commander
             if (data.commanders) {
                 Object.values(data.commanders).forEach(c => {
                     if(c.card) document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander'));
                 });
             }
+
+            // Carica Mazzo
             deck = [];
             if (data.mainboard) {
                 Object.values(data.mainboard).forEach(info => {
                     for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
-                });
-            }
-
-            // CARICAMENTO TOKEN DINAMICO DAL MAZZO
-            if (data.tokens) {
-                const list = document.getElementById('token-list');
-                Object.values(data.tokens).forEach(t => {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-token';
-                    const imgUrl = `https://api.scryfall.com/cards/${t.card.scryfall_id}?format=image&version=normal`;
-                    btn.onclick = () => createToken(t.card.name, t.card.type_line, imgUrl);
-                    btn.innerHTML = `<img src="https://api.scryfall.com/cards/${t.card.scryfall_id}?format=image&version=small"> ${t.card.name}`;
-                    list.appendChild(btn);
                 });
             }
 
@@ -155,10 +145,14 @@
     function createCardUI(cardData, location) {
         if (!cardData || !cardData.scryfall_id) return document.createElement('div');
         const img = document.createElement('img');
+        
+        // Logica immagine: se è un token ha già l'URL pronto, se è una carta normale usa scryfall_id
         img.src = cardData.image_uris ? cardData.image_uris.normal : `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
+        
         img.className = 'card ' + (location === 'hand' ? 'hand-card' : '');
         img.draggable = true;
         img.dataset.cardData = JSON.stringify(cardData);
+        
         img.onclick = () => {
             const parent = img.parentElement ? img.parentElement.id : "";
             if (parent === 'hand' || parent === 'commander-zone') {
@@ -167,14 +161,24 @@
                 img.classList.toggle('tapped');
             }
         };
-        img.ondragstart = (e) => { draggedCardData = cardData; e.dataTransfer.setData("text/plain", cardData.scryfall_id); setTimeout(() => img.style.opacity = "0.3", 0); };
-        img.ondragend = () => { img.style.opacity = "1"; document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); };
+
+        img.ondragstart = (e) => { 
+            draggedCardData = cardData; 
+            e.dataTransfer.setData("text/plain", cardData.scryfall_id); 
+            setTimeout(() => img.style.opacity = "0.3", 0); 
+        };
+        img.ondragend = () => { 
+            img.style.opacity = "1"; 
+            document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); 
+        };
         return img;
     }
 
     function playCard(cardData, from) {
         const type = (cardData.type_line || "").toLowerCase();
         const isLand = type.includes('land');
+        
+        // Controllo Mana
         if (!isLand) {
             const cost = calculateCMC(cardData.mana_cost);
             const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
@@ -186,14 +190,20 @@
             }
             for (let i = 0; i < cost; i++) { untappedLands[i].classList.add('tapped'); }
         }
+
+        // Rimuovi da mano
         if (from === 'hand') {
             hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
         }
+
+        // Rimuovi elemento visuale
         const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
         document.querySelectorAll(selector).forEach(c => {
             const data = JSON.parse(c.dataset.cardData || "{}");
             if(data.scryfall_id === cardData.scryfall_id) c.remove();
         });
+
+        // Sposta sul campo
         const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
         updateUI();
@@ -212,7 +222,7 @@
             image_uris: { normal: imgUrl },
             mana_cost: ""
         };
-        const zoneId = type.toLowerCase().includes('creature') ? 'field-creatures' : 'field-others';
+        const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
         document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
         toggleTokenMenu();
     }
@@ -229,18 +239,21 @@
 
     function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
     function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    
     function drop(e) {
         e.preventDefault();
         const zone = e.currentTarget;
         zone.classList.remove('drag-over');
         if (!draggedCardData) return;
+        
         const from = document.querySelector(`img[src*="${draggedCardData.scryfall_id}"]`)?.parentElement?.id || 'hand';
         removeFromAll(draggedCardData, from);
-        const targetZone = zone.dataset.zone;
-        if (targetZone === 'grave') grave.push(draggedCardData);
-        else if (targetZone === 'exile') exile.push(draggedCardData);
+        
+        if (zone.dataset.zone === 'grave') grave.push(draggedCardData);
+        else if (zone.dataset.zone === 'exile') exile.push(draggedCardData);
         else if (zone.id === 'hand') hand.push(draggedCardData);
         else { zone.appendChild(createCardUI(draggedCardData, 'field')); }
+        
         updateUI();
     }
 
@@ -256,8 +269,11 @@
         document.getElementById('count-lib').innerText = deck.length;
         document.getElementById('count-grave').innerText = grave.length;
         document.getElementById('count-exile').innerText = exile.length;
-        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris ? grave[grave.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+grave[grave.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
-        document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris ? exile[exile.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+exile[exile.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
+        
+        const gVisual = document.getElementById('grave-visual');
+        gVisual.innerHTML = grave.length > 0 ? `<img src="https://api.scryfall.com/cards/${grave[grave.length-1].scryfall_id}?format=image&version=small" style="width:100%">` : '';
+        const eVisual = document.getElementById('exile-visual');
+        eVisual.innerHTML = exile.length > 0 ? `<img src="https://api.scryfall.com/cards/${exile[exile.length-1].scryfall_id}?format=image&version=small" style="width:100%">` : '';
     }
 
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
@@ -267,6 +283,7 @@
     function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
     function drawCard() { if (deck.length > 0) { hand.push(deck.pop()); updateUI(); } }
     function shuffleDeck() { for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } updateUI(); }
+    
     window.onload = init;
 </script>
 </body>
