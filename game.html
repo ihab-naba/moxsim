@@ -2,169 +2,217 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Tavolo da Gioco</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoxSim Arena - Battle Table</title>
+    
     <style>
-        :root { --bg: #0d0d0d; --brd: #222; --accent: #007bff; --card-w: 85px; }
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
+        :root {
+            --player-aura: #007bff;
+            --ai-aura: #ff4757;
+            --mox-purple: #7d5bbe;
+            --bg-dark: #0a0a0a;
+            --zone-bg: rgba(255, 255, 255, 0.02);
+        }
 
-        /* HEADER */
-        #top-bar { height: 50px; background: #000; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--brd); justify-content: space-between; }
-        .back-btn { color: #888; text-decoration: none; font-size: 13px; border: 1px solid #333; padding: 5px 10px; border-radius: 4px; }
-        .back-btn:hover { background: #111; color: #fff; }
+        body { 
+            margin: 0; 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg-dark); 
+            color: white; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
 
-        /* LAYOUT (Campo 1fr, Sidebar 280px) */
-        #main-layout { display: grid; grid-template-columns: 1fr 280px; height: calc(100vh - 50px); }
+        /* LAYOUT PRINCIPALE */
+        #arena {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            height: 100vh;
+        }
 
-        /* TAVOLO */
-        #table { display: grid; grid-template-rows: 1fr 1fr; border-right: 1px solid var(--brd); }
-        .player-side { display: grid; grid-template-columns: 1fr 2.5fr; grid-template-rows: 1.6fr 1fr; gap: 2px; background: var(--brd); }
-        .cpu { transform: rotate(180deg); }
+        /* TAVOLO DA GIOCO */
+        #table {
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            gap: 10px;
+            position: relative;
+        }
 
-        /* ZONE */
-        .zone { background: var(--bg); position: relative; padding: 40px 15px 15px 15px; display: flex; flex-wrap: wrap; gap: 10px; overflow-y: auto; align-content: flex-start; }
-        .zone::before { content: attr(data-label); position: absolute; top: 10px; left: 15px; font-size: 11px; color: #444; font-weight: 900; text-transform: uppercase; }
+        .side { flex: 1; display: flex; flex-direction: column; gap: 10px; }
 
-        /* SIDEBAR */
-        .sidebar { background: #080808; display: flex; flex-direction: column; padding: 15px; gap: 10px; }
-        .slot-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .slot { height: 100px; background: #000; border: 1px solid #222; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #444; }
-        .slot b { font-size: 22px; color: #fff; }
+        .zone-row { display: flex; gap: 10px; flex: 1; }
 
-        /* VITE E PULSANTI */
-        .stat-box { background: #111; border: 1px solid #222; padding: 15px; border-radius: 10px; text-align: center; }
-        .life { font-size: 36px; font-weight: 900; margin: 5px 0; }
-        .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 5px; }
+        .zone {
+            flex: 1;
+            background: var(--zone-bg);
+            border: 1px solid #222;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: 0.3s;
+        }
+
+        /* EFFETTI NEON */
+        .player-side .zone { border-bottom: 2px solid var(--player-aura); }
+        .ai-side .zone { border-top: 2px solid var(--ai-aura); }
+        
+        .zone::after {
+            content: attr(data-label);
+            position: absolute;
+            font-size: 10px;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* MANO DEL GIOCATORE */
+        #hand {
+            height: 120px;
+            background: rgba(0,0,0,0.5);
+            border-top: 1px solid #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+        }
+
+        /* SIDEBAR CONTROLLI */
+        .sidebar {
+            background: #111;
+            border-left: 1px solid #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .life-box {
+            background: #000;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #222;
+        }
+
+        .life-total { font-size: 54px; font-weight: 900; color: var(--player-aura); display: block; }
+
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-sm { 
+            background: #222; border: none; color: white; width: 40px; height: 40px; 
+            border-radius: 50%; cursor: pointer; font-size: 20px; 
+        }
+        .btn-sm:hover { background: #333; }
+
+        .btn-action {
+            background: var(--mox-purple);
+            color: white; border: none; padding: 15px;
+            border-radius: 8px; font-weight: bold; cursor: pointer;
+            text-transform: uppercase;
+        }
 
         /* CARTE */
-        .card { width: var(--card-w); aspect-ratio: 2.5/3.5; border-radius: 6px; cursor: grab; transition: transform 0.2s; position: relative; }
-        .card img { width: 100%; height: 100%; border-radius: 6px; pointer-events: none; }
-        .card:hover { transform: scale(3) z-index: 999; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
-        .tapped { transform: rotate(90deg); }
+        .card-mini {
+            width: 70px; height: 100px;
+            background: #222; border-radius: 5px;
+            border: 1px solid #444;
+            cursor: pointer;
+        }
+
+        /* MODALITÀ GOLDFISH */
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div id="top-bar">
-    <a href="index.html" class="back-btn">← Torna alla Libreria</a>
-    <div id="deck-title" style="font-weight: bold; color: var(--accent);">Caricamento mazzo...</div>
-    <div style="width: 100px;"></div> 
-</div>
-
-<div id="main-layout">
+<div id="arena">
     <div id="table">
-        <div class="player-side cpu">
-            <div class="zone" data-label="Non-Creatures" id="c-others"></div>
-            <div class="zone" data-label="Creatures" id="c-creatures"></div>
-            <div class="zone" data-label="Hand" id="c-hand" style="grid-column: span 2"></div>
+        <div class="side ai-side" id="ai-area">
+            <div class="zone-row">
+                <div class="zone" data-label="AI Creatures"></div>
+                <div class="zone" data-label="AI Lands"></div>
+            </div>
         </div>
 
-        <div class="player-side">
-            <div class="zone" data-label="Artefacts / Enchants" id="p-others"></div>
-            <div class="zone" data-label="Creatures" id="p-creatures"></div>
-            <div class="zone" data-label="Hand" id="p-hand"></div>
-            <div class="zone" data-label="Lands" id="p-lands"></div>
+        <div class="side player-side">
+            <div class="zone-row">
+                <div class="zone" data-label="Your Lands"></div>
+                <div class="zone" data-label="Your Creatures"></div>
+                <div class="zone" data-label="Other Permanents"></div>
+            </div>
+        </div>
+
+        <div id="hand">
+            <p style="color:#444; font-size: 12px;">LA TUA MANO APPARIRÀ QUI</p>
         </div>
     </div>
 
     <div class="sidebar">
-        <div class="slot-group">
-            <div class="slot">LIB<b id="c-count">0</b></div>
-            <div class="slot">CMD</div>
-        </div>
-        <div class="stat-box">
-            <div class="life" style="color:#ff4757">40</div>
-            <button class="btn" style="background:#ff4757; color:white">AI ACTION</button>
-        </div>
-        <div class="slot-group">
-            <div class="slot">GRAVE</div>
-            <div class="slot">EXILE</div>
+        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; text-align:left;">← Torna alla Libreria</button>
+        
+        <div class="life-box">
+            <span style="font-size: 12px; color: #444;">PLAYER LIFE</span>
+            <span id="player-life" class="life-total">40</span>
+            <div class="btn-group">
+                <button class="btn-sm" onclick="changeLife(-1)">-</button>
+                <button class="btn-sm" onclick="changeLife(1)">+</button>
+            </div>
         </div>
 
-        <div style="flex-grow:1"></div>
+        <div id="ai-life-box" class="life-box" style="border-color: var(--ai-aura);">
+            <span style="font-size: 12px; color: #444;">AI LIFE</span>
+            <span id="ai-life" class="life-total" style="color: var(--ai-aura);">40</span>
+        </div>
 
-        <div class="slot-group">
-            <div class="slot">EXILE</div>
-            <div class="slot">GRAVE</div>
+        <button class="btn-action" onclick="drawCard()">PESCA CARTA</button>
+        <button class="btn-action" style="background:#444" onclick="shuffleDeck()">MESCOLA</button>
+        
+        <div style="margin-top: auto;">
+            <p id="game-info" style="font-size: 10px; color: #444; text-transform: uppercase;"></p>
         </div>
-        <div class="stat-box">
-            <div class="life" style="color:var(--accent)">40</div>
-            <button class="btn" style="background:#e67e22; color:white" onclick="drawCard()">PESCA</button>
-        </div>
-        <div class="slot-group">
-            <div class="slot">CMD</div>
-            <div class="slot">LIB<b id="p-count">0</b></div>
-        </div>
-        <button class="btn" style="background:var(--accent); color:white; border-radius:30px">FASE: INIZIALE</button>
     </div>
 </div>
 
 <script>
-    let playerDeck = [];
+    // 1. GESTIONE MODALITÀ E URL
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get('mode') || 'ai';
+    const deckUrl = params.get('deck');
 
-    // 1. LEGGE L'URL DALLA INDEX
-    window.onload = async () => {
-        const params = new URLSearchParams(window.location.search);
-        const deckUrl = params.get('deck');
-        if (deckUrl) {
-            await loadMoxfieldDeck(deckUrl);
-        } else {
-            document.getElementById('deck-title').innerText = "Nessun mazzo selezionato";
-        }
-    };
+    document.getElementById('game-info').innerText = `MODALITÀ: ${mode}`;
 
- async function loadMoxfieldDeck(url) {
-    const id = url.split('/decks/')[1]?.split('?')[0];
-    // Usiamo corsproxy.io per saltare il blocco di sicurezza
-    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/' + id)}`;
-    
-    try {
-        const res = await fetch(proxyUrl).then(r => r.json());
-        document.getElementById('deck-title').innerText = res.name;
-        
-        playerDeck = []; // Reset mazzo
-        Object.values(res.mainboard).forEach(item => {
-            for(let i=0; i<item.quantity; i++) playerDeck.push(item.card.name);
-        });
-        playerDeck.sort(() => Math.random() - 0.5);
-        updateLibraryCount();
-        console.log("Mazzo caricato correttamente!");
-    } catch (e) {
-        console.error(e);
-        alert("Errore tecnico. Riprova tra un istante.");
+    if (mode === 'goldfish') {
+        document.getElementById('ai-area').classList.add('hidden');
+        document.getElementById('ai-life-box').classList.add('hidden');
     }
-}
+
+    // 2. LOGICA DI GIOCO BASE
+    let life = 40;
+    function changeLife(amt) {
+        life += amt;
+        document.getElementById('player-life').innerText = life;
+    }
 
     function drawCard() {
-        if (playerDeck.length > 0) {
-            const name = playerDeck.pop();
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.draggable = true;
-            card.innerHTML = `<img src="https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}&format=image">`;
-            
-            // Drag and Drop
-            card.id = "card-" + Date.now();
-            card.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
-            card.ondblclick = () => card.classList.toggle('tapped');
-
-            document.getElementById('p-hand').appendChild(card);
-            updateLibraryCount();
-        }
+        console.log("Pesca una carta...");
+        // Qui integreremo la chiamata API a Scryfall/Moxfield
     }
 
-    function updateLibraryCount() {
-        document.getElementById('p-count').innerText = playerDeck.length;
+    // 3. CARICAMENTO MAZZO (LOGICA PROXY)
+    async function loadMoxfieldDeck(url) {
+        console.log("Iniziando caricamento mazzo:", url);
+        // Per evitare l'errore CORS, useremo in futuro un fetcher specifico
+        // Per ora simuliamo il successo
+        setTimeout(() => {
+            console.log("Mazzo pronto nell'Arena!");
+        }, 1000);
     }
 
-    // Gestione Drop nelle zone
-    document.querySelectorAll('.zone, .slot').forEach(zone => {
-        zone.ondragover = (e) => e.preventDefault();
-        zone.ondrop = (e) => {
-            const id = e.dataTransfer.getData("text");
-            const el = document.getElementById(id);
-            if(el) zone.appendChild(el);
-        };
-    });
+    if (deckUrl) loadMoxfieldDeck(deckUrl);
 </script>
+
 </body>
 </html>
