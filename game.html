@@ -8,7 +8,6 @@
     <style>
         :root {
             --player-aura: #007bff;
-            --ai-aura: #ff4757;
             --mox-purple: #7d5bbe;
             --bg-dark: #0a0a0a;
             --zone-bg: rgba(255, 255, 255, 0.02);
@@ -22,69 +21,105 @@
 
         #arena {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr 300px; /* Campo da gioco e sidebar */
             height: 100vh;
         }
 
-        /* --- TAVOLO DA GIOCO --- */
-        #table {
+        /* --- CAMPO DA GIOCO PRINCIPALE --- */
+        #main-battlefield {
             display: flex;
             flex-direction: column;
+            flex: 1;
             padding: 15px;
             gap: 15px;
-            position: relative;
             background: radial-gradient(circle at center, #151515 0%, #0a0a0a 100%);
         }
 
-        .side { display: flex; flex-direction: column; gap: 10px; transition: all 0.5s ease; }
-        .zone-row { display: flex; gap: 10px; flex: 1; }
+        /* Contenitore per le zone superiori impilate */
+        #battlefield-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            flex-grow: 1; /* Prende tutto lo spazio superiore */
+        }
 
         .zone {
-            flex: 1;
+            flex-grow: 1;
             background: var(--zone-bg);
             border: 1px solid #222;
+            border-bottom: 2px solid var(--player-aura); /* Aura blu inferiore */
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            min-height: 120px;
+            min-height: 150px;
         }
 
+        /* --- ETICHETTE ZONE (In alto a sinistra, come nel mock-up) --- */
         .zone::after {
+            content: attr(data-label);
+            position: absolute;
+            font-size: 10px;
+            color: #444;
+            letter-spacing: 2px;
+            top: 10px; /* Posizione in alto */
+            left: 15px; /* Posizione a sinistra */
+            text-transform: uppercase;
+        }
+
+        /* --- ZONA INFERIORE SUDDIVISA (Come Screenshot 17.33.33) --- */
+        #lower-zones {
+            height: 150px; /* Altezza fissa per questa sezione */
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        /* La zona "La Tua Mano" è più larga */
+        #hand-sub-zone {
+            flex: 3;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #333;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Le altre zone più piccole e impilate */
+        #game-sub-zones {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .mini-zone {
+            flex: 1;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid #222;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Etichette per le mini-zone */
+        .mini-zone::after, #hand-sub-zone::after {
             content: attr(data-label);
             position: absolute;
             font-size: 9px;
             color: #444;
-            letter-spacing: 2px;
-            bottom: 10px;
+            top: 8px;
+            left: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* --- LAYOUT DINAMICI --- */
-        
-        /* Modalità VS AI: Speculare */
-        .mode-ai .side { flex: 1; }
-        .mode-ai .ai-side .zone { border-bottom: 2px solid var(--ai-aura); }
-        .mode-ai .player-side .zone { border-top: 2px solid var(--player-aura); }
-
-        /* Modalità GOLDFISH: Tutto spazio al giocatore */
-        .mode-goldfish .ai-side { display: none; }
-        .mode-goldfish .player-side { flex: 1; }
-        .mode-goldfish .player-side .zone { border-bottom: 2px solid var(--player-aura); }
-        .mode-goldfish .zone-row { flex-direction: column; } /* Zone impilate come nell'ultimo screen */
-
-        /* --- MANO --- */
-        #hand-container {
-            height: 140px;
-            background: rgba(0,0,0,0.8);
-            border-top: 1px solid #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px;
-        }
-
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR CONTROLLI --- */
         .sidebar {
             background: #0f0f0f;
             border-left: 1px solid #222;
@@ -102,14 +137,12 @@
             border: 1px solid #333;
         }
 
-        .life-total { font-size: 42px; font-weight: 900; display: block; }
-        .player-life { color: var(--player-aura); }
-        .ai-life { color: var(--ai-aura); }
+        .life-total { font-size: 42px; font-weight: 900; color: var(--player-aura); display: block; }
 
         .btn-group { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
         .btn-circle { 
             background: #222; border: none; color: white; width: 35px; height: 35px; 
-            border-radius: 50%; cursor: pointer; font-weight: bold;
+            border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 20px;
         }
 
         .btn-action {
@@ -117,58 +150,47 @@
             color: white; border: none; padding: 12px;
             border-radius: 8px; font-weight: bold; cursor: pointer;
             transition: 0.2s;
+            text-transform: uppercase;
         }
         .btn-action:hover { filter: brightness(1.2); }
 
         .hidden { display: none !important; }
     </style>
 </head>
-<body class="mode-ai" id="main-body">
+<body id="main-body">
 
 <div id="arena">
-    <div id="table-wrapper" style="display:flex; flex-direction:column; flex:1;">
-        <div id="table">
-            <div class="side ai-side" id="ai-area">
-                <div class="zone-row">
-                    <div class="zone" data-label="AI CREATURES"></div>
-                    <div class="zone" data-label="AI LANDS"></div>
-                </div>
-            </div>
-
-            <div class="side player-side">
-                <div class="zone-row">
-                    <div class="zone" data-label="YOUR LANDS"></div>
-                    <div class="zone" data-label="YOUR CREATURES"></div>
-                    <div class="zone" data-label="OTHER PERMANENTS"></div>
-                </div>
-            </div>
+    <div id="main-battlefield">
+        
+        <div id="battlefield-stack">
+            <div class="zone" data-label="CREATURES"></div>
+            <div class="zone" data-label="OTHERS"></div>
+            <div class="zone" data-label="LAND"></div>
         </div>
 
-        <div id="hand-container">
-            <span style="font-size: 10px; color:#555; margin-bottom: 10px;">LA TUA MANO</span>
-            <div id="hand-cards" style="display:flex; gap:10px;">
-                </div>
+        <div id="lower-zones">
+            <div id="hand-sub-zone" data-label="LA TUA MANO">
+                <div id="hand-cards" style="display:flex; gap:10px;">
+                    </div>
+            </div>
+            
+            <div id="game-sub-zones">
+                <div class="mini-zone" data-label="MAZZO"></div>
+                <div class="mini-zone" data-label="CIMITERO"></div>
+                <div class="mini-zone" data-label="ESILIO"></div>
+            </div>
         </div>
     </div>
 
     <div class="sidebar">
-        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; margin-bottom:10px;">← ESCI DALL'ARENA</button>
+        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; text-align:left;">← ESCI DALL'ARENA</button>
         
         <div class="life-box">
             <small style="color:#555">PLAYER LIFE</small>
-            <span id="p-life-val" class="life-total player-life">40</span>
+            <span id="p-life-val" class="life-total">40</span>
             <div class="btn-group">
                 <button class="btn-circle" onclick="updateLife('p', -1)">-</button>
                 <button class="btn-circle" onclick="updateLife('p', 1)">+</button>
-            </div>
-        </div>
-
-        <div id="ai-life-box" class="life-box">
-            <small style="color:#555">AI LIFE</small>
-            <span id="ai-life-val" class="life-total ai-life">40</span>
-            <div class="btn-group">
-                <button class="btn-circle" onclick="updateLife('ai', -1)">-</button>
-                <button class="btn-circle" onclick="updateLife('ai', 1)">+</button>
             </div>
         </div>
 
@@ -183,28 +205,15 @@
 
 <script>
     const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode') || 'ai';
-    const deckUrl = params.get('deck');
-
-    // Applica classe modalità al caricamento
+    const mode = params.get('mode') || 'goldfish';
+    // Ignoriamo temporaneamente la modalità 'ai' dato che abbiamo rimosso le zone AI
     document.getElementById('main-body').className = `mode-${mode}`;
-
-    if (mode === 'goldfish') {
-        document.getElementById('ai-life-box').classList.add('hidden');
-    }
 
     // Gestione Vite
     let pLife = 40;
-    let aiLife = 40;
-
     function updateLife(who, amt) {
-        if (who === 'p') {
-            pLife += amt;
-            document.getElementById('p-life-val').innerText = pLife;
-        } else {
-            aiLife += amt;
-            document.getElementById('ai-life-val').innerText = aiLife;
-        }
+        pLife += amt;
+        document.getElementById('p-life-val').innerText = pLife;
     }
 
     function drawCard() {
