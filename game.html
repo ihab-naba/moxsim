@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V6</title>
+    <title>MoxSim Arena - Goldfish V8</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -12,30 +12,33 @@
         
         .zone { 
             background: var(--panel); border: 1px solid var(--mox-blue); border-radius: 12px; 
-            position: relative; display: flex; align-items: center; padding: 25px 10px 5px; gap: 5px; flex: 1;
-            min-height: 0; overflow: hidden;
+            position: relative; display: flex; align-items: center; padding: 25px 10px 5px; gap: 15px; flex: 1;
+            min-height: 0; overflow-x: auto;
         }
         .zone::before { content: attr(data-label); position: absolute; top: 5px; left: 10px; font-size: 10px; color: var(--gray); font-weight: bold; }
 
         #bottom-bar { display: flex; height: 180px; gap: 8px; flex-shrink: 0; }
         
-        /* FIX DEFINITIVO MANO: Le carte restano dentro e si ridimensionano */
-        #hand { flex: 2.5; display: flex; justify-content: flex-start; align-items: center; overflow: hidden; padding-top: 10px; }
-        #hand .card { height: 150px; width: auto; max-width: 12%; object-fit: contain; margin-right: -20px; transition: 0.2s; }
-        #hand .card:hover { transform: translateY(-25px) scale(1.2); z-index: 100; margin-right: 10px; }
+        #hand { flex: 2.5; justify-content: center; overflow: hidden; }
+        #hand .card { height: 155px; width: auto; margin-right: -45px; transition: 0.2s; z-index: 1; }
+        #hand .card:hover { transform: translateY(-30px) scale(1.3); z-index: 100; margin-right: 10px; margin-left: 10px; }
 
         .small-zone { flex: 0.6; justify-content: center; }
-        .card { height: 130px; border-radius: 8px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
         
+        /* Stile carte sul campo e animazione TAP */
+        .card { height: 130px; border-radius: 8px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: transform 0.2s ease-in-out; }
+        .tapped { transform: rotate(90deg); margin: 0 20px; } /* Aggiunto margine per non sovrapporsi quando ruotata */
+
         #sidebar { border: 1px solid var(--mox-blue); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .life { font-size: 65px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; }
+        .life { font-size: 65px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; text-shadow: 0 0 15px rgba(0,123,255,0.5); }
         
         .btn { background: #9a73ef; border: none; padding: 10px; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; box-shadow: 0 4px #6a49ac; }
         .btn:active { box-shadow: 0 2px #6a49ac; transform: translateY(2px); }
         .btn-red { background: #d11326; box-shadow: 0 4px #820914; }
         
         #commander-zone { margin-top: auto; height: 180px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
-        .count { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--mox-blue); }
+        #commander-zone .card { height: 160px; }
+        .count { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--mox-blue); border: 1px solid var(--mox-blue); }
     </style>
 </head>
 <body>
@@ -60,7 +63,7 @@
             <button class="btn" style="width:45px" onclick="changeLife(-1)">-</button>
             <button class="btn" style="width:45px" onclick="changeLife(1)">+</button>
         </div>
-        <button class="btn">Player ▾</button>
+        <button class="btn" onclick="untapAll()">Untap All</button>
         <button class="btn" onclick="shuffleDeck()">Shuffle</button>
         <button class="btn" onclick="drawCard()">Draw</button>
         <button class="btn-red btn" onclick="location.reload()">Restart</button>
@@ -77,49 +80,43 @@
         const urlParams = new URLSearchParams(window.location.search);
         let deckUrl = urlParams.get('deck');
         if (!deckUrl) return;
-
         const deckId = deckUrl.match(/\/decks\/([^?\/]+)/)?.[1] || deckUrl.split('/').pop();
         
-        // PROXY DI RISERVA se AllOrigins fallisce
-        const proxies = [
-            `https://api.allorigins.win/get?url=`,
-            `https://corsproxy.io/?`
-        ];
+        try {
+            const proxy = "https://api.allorigins.win/get?url=";
+            const target = encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`);
+            const response = await fetch(proxy + target);
+            const json = await response.json();
+            const data = JSON.parse(json.contents);
 
-        let data = null;
-        for (let p of proxies) {
-            try {
-                const target = encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`);
-                const response = await fetch(p + target);
-                const json = await response.json();
-                data = p.includes('allorigins') ? JSON.parse(json.contents) : json;
-                if (data) break;
-            } catch (e) { console.log("Tentativo fallito con proxy..."); }
-        }
+            if (data.commanders) {
+                const cz = document.getElementById('commander-zone');
+                Object.values(data.commanders).forEach(c => cz.appendChild(createCardUI(c.card, 'commander')));
+            }
 
-        if (!data) { alert("Errore: Moxfield non risponde. Riprova tra 10 secondi."); return; }
+            deck = [];
+            Object.values(data.mainboard).forEach(info => {
+                for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
+            });
 
-        if (data.commanders) {
-            const cz = document.getElementById('commander-zone');
-            Object.values(data.commanders).forEach(c => cz.appendChild(createCardUI(c.card, false)));
-        }
-
-        deck = [];
-        Object.values(data.mainboard).forEach(info => {
-            for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
-        });
-
-        shuffleArray(deck);
-        for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
-        updateUI();
+            shuffleArray(deck);
+            for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
+            updateUI();
+        } catch (err) { console.error("Errore"); }
     }
 
-    function createCardUI(cardData, isHand = true) {
+    function createCardUI(cardData, location = 'hand') {
         const img = document.createElement('img');
-        const scryId = cardData.scryfall_id;
-        img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
+        img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
         img.className = 'card';
-        if (isHand) img.onclick = () => playCard(cardData);
+        
+        img.onclick = () => {
+            if (location === 'hand') {
+                playCard(cardData);
+            } else {
+                img.classList.toggle('tapped');
+            }
+        };
         return img;
     }
 
@@ -128,10 +125,21 @@
         if (idx > -1) {
             hand.splice(idx, 1);
             const type = (cardData.type_line || "").toLowerCase();
-            let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-            document.getElementById(zoneId).appendChild(createCardUI(cardData, false));
+            let zoneId = 'field-others';
+            if (type.includes('land')) zoneId = 'field-lands';
+            else if (type.includes('creature')) zoneId = 'field-creatures';
+            
+            // Passiamo 'field' come location così la carta diventa tappabile
+            document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
             updateUI();
         }
+    }
+
+    // Funzione utile per l'inizio del turno
+    function untapAll() {
+        document.querySelectorAll('.card.tapped').forEach(card => {
+            card.classList.remove('tapped');
+        });
     }
 
     function shuffleDeck() {
@@ -156,7 +164,7 @@
     function updateUI() {
         const handDiv = document.getElementById('hand');
         handDiv.innerHTML = '';
-        hand.forEach(c => handDiv.appendChild(createCardUI(c, true)));
+        hand.forEach(c => handDiv.appendChild(createCardUI(c, 'hand')));
 
         const libDiv = document.getElementById('library');
         libDiv.innerHTML = deck.length > 0 ? 
