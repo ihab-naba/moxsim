@@ -216,10 +216,36 @@
     }
 
     function playCard(cardData, from) {
-        removeFromAll(cardData);
+        // 1. Rimuoviamo prima la carta dalla logica (array hand)
+        if (from === 'hand') {
+            hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+        }
+
+        // 2. Troviamo la zona giusta
         const type = (cardData.type_line || "").toLowerCase();
-        let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
+        let zoneId;
+        
+        if (type.includes('land')) {
+            zoneId = 'field-lands';
+        } else if (type.includes('creature')) {
+            zoneId = 'field-creatures';
+        } else {
+            zoneId = 'field-others';
+        }
+
+        // 3. Rimuoviamo l'elemento visivo vecchio per evitare duplicati o "sparizioni"
+        document.querySelectorAll('.card').forEach(c => {
+            const data = JSON.parse(c.dataset.cardData || "{}");
+            if(data.scryfall_id === cardData.scryfall_id && c.parentElement.id === from) {
+                c.remove();
+            }
+        });
+
+        // 4. Aggiungiamo la carta alla zona di destinazione
+        const newCard = createCardUI(cardData, 'field');
+        document.getElementById(zoneId).appendChild(newCard);
+
+        // 5. Aggiorniamo la mano visiva
         updateUI();
     }
 
