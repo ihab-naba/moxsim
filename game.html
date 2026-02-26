@@ -2,68 +2,73 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V19 (Stable)</title>
+    <title>MoxSim Arena - Goldfish V21 (Visual Auto-Tap)</title>
     <style>
-        :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; }
+        :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; --valid: #2ecc71; --invalid: #e74c3c; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
+        
         #arena { display: grid; grid-template-columns: 1fr 280px; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
         #board { display: flex; flex-direction: column; gap: 10px; }
-        #board-header { display: flex; align-items: center; padding: 0 5px; height: 35px; gap: 15px; }
-        .turn-badge { background: #1a1a1a; border: 1px solid #333; padding: 4px 15px; border-radius: 4px; font-weight: bold; color: var(--mox-blue); font-size: 13px; }
-        .zone { background: var(--panel); border: 1px solid #282828; border-radius: 8px; position: relative; display: flex; align-items: center; padding: 30px 10px 10px; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; }
-        .zone.drag-over { border-color: var(--mox-blue); background: #222; }
+        
+        .zone { background: var(--panel); border: 1px solid #282828; border-radius: 8px; position: relative; display: flex; align-items: center; padding: 30px 10px 10px; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; transition: 0.3s; }
         .zone::before { content: attr(data-label); position: absolute; top: 8px; left: 12px; font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; }
+
         #bottom-bar { display: flex; height: 180px; gap: 10px; flex-shrink: 0; }
         #hand { flex: 2.5; justify-content: center; overflow: visible !important; }
-        .pile-zone { flex: 0.6; display: flex; flex-direction: column; align-items: center; }
-        .pile-label { font-size: 12px; margin-bottom: 5px; color: #eee; font-weight: bold; }
-        .pile-visual { width: 85px; height: 118px; border-radius: 8px; border: 1px solid #333; background: #000; position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .sleeve { background: var(--sleeve-color); border: 2px solid #fff; }
-        .card { height: 130px; border-radius: 8px; cursor: grab; flex-shrink: 0; transition: transform 0.2s; user-select: none; }
-        .card:active { cursor: grabbing; z-index: 5000; }
+
+        /* CARDS & HIGHLIGHTS */
+        .card { height: 130px; border-radius: 8px; cursor: grab; flex-shrink: 0; transition: transform 0.2s, box-shadow 0.3s, border 0.3s; user-select: none; border: 2px solid transparent; }
         .hand-card { margin-right: -45px; }
         .hand-card:hover { transform: translateY(-70px) scale(2.2); z-index: 1000 !important; margin: 0 40px; }
-        .tapped { transform: rotate(90deg); margin: 0 30px; filter: brightness(0.6); }
+        
+        /* Stato Giocabilità */
+        .can-cast { border-color: var(--valid) !important; box-shadow: 0 0 15px var(--valid); }
+        .cant-cast { border-color: var(--invalid) !important; opacity: 0.8; }
+        
+        .tapped { transform: rotate(90deg); margin: 0 30px; filter: brightness(0.5); border-color: transparent !important; box-shadow: none !important; }
+
         #sidebar { border-left: 1px solid #222; padding: 15px; display: flex; flex-direction: column; gap: 12px; background: #0c0c0c; }
-        .life { font-size: 60px; text-align: center; font-weight: bold; margin: 10px 0; }
+        .life { font-size: 60px; text-align: center; font-weight: bold; margin: 10px 0; color: white; }
         .btn { background: #2a2a2a; border: none; padding: 12px; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
         .btn-blue { background: var(--mox-blue); }
-        #commander-zone { height: 140px; border: 1px solid #222; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-top: auto; background: #111; }
-        #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; }
-        #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        
+        .pile-zone { flex: 0.6; display: flex; flex-direction: column; align-items: center; }
+        .pile-visual { width: 85px; height: 118px; border-radius: 8px; border: 1px solid #333; background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .sleeve { background: var(--sleeve-color); border: 2px solid #fff; }
     </style>
 </head>
 <body>
+
 <div id="arena">
     <div id="board">
-        <div id="board-header"><div class="turn-badge" id="turn-display">Turno 1</div></div>
-        <div class="zone" data-label="Creatures" id="field-creatures" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
-        <div class="zone" data-label="Non-Creatures" id="field-others" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
-        <div class="zone" data-label="Lands" id="field-lands" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
+        <div class="zone" data-label="Creatures" id="field-creatures"></div>
+        <div class="zone" data-label="Non-Creatures" id="field-others"></div>
+        <div class="zone" data-label="Lands" id="field-lands"></div>
+        
         <div id="bottom-bar">
-            <div class="zone" data-label="Hand" id="hand" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
-            <div class="pile-zone"><div class="pile-label">Library (<span id="count-lib">0</span>)</div><div class="pile-visual sleeve" onclick="drawCard()"></div></div>
-            <div class="pile-zone"><div class="pile-label">Graveyard (<span id="count-grave">0</span>)</div><div class="pile-visual" id="grave-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="grave"></div></div>
-            <div class="pile-zone"><div class="pile-label">Exile (<span id="count-exile">0</span>)</div><div class="pile-visual" id="exile-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="exile"></div></div>
+            <div class="zone" data-label="Hand" id="hand"></div>
+            <div class="pile-zone">
+                <div style="font-size:10px; margin-bottom:5px">Library (<span id="count-lib">0</span>)</div>
+                <div class="pile-visual sleeve" onclick="drawCard()"></div>
+            </div>
+            <div class="pile-zone">
+                <div style="font-size:10px; margin-bottom:5px">Graveyard (<span id="count-grave">0</span>)</div>
+                <div class="pile-visual" id="grave-visual"></div>
+            </div>
         </div>
     </div>
+
     <div id="sidebar">
         <div class="life" id="life-display">40</div>
-        <div style="display:flex; gap:8px;"><button class="btn" style="flex:1" onclick="changeLife(-1)">-</button><button class="btn" style="flex:1" onclick="changeLife(1)">+</button></div>
         <button class="btn btn-blue" onclick="nextTurn()">Next Turn</button>
-        <button class="btn" onclick="openScry()">Scry 1</button>
-        <button class="btn" onclick="shuffleDeck()">Shuffle</button>
         <button class="btn" onclick="drawCard()">Draw</button>
+        <button class="btn" onclick="untapAll()">Untap All</button>
         <button class="btn" style="background:#a82331" onclick="location.reload()">Restart</button>
-        <div id="commander-zone" data-label="COMMANDER" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
     </div>
 </div>
-<div id="error-msg">Mana Insufficiente!</div>
-<div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
 <script>
-    let deck = [], hand = [], grave = [], exile = [];
-    let life = 40, turn = 1, draggedCardData = null;
+    let deck = [], hand = [], grave = [], life = 40;
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -78,23 +83,15 @@
             const json = await response.json();
             const data = JSON.parse(json.contents);
 
-            if (data.commanders) {
-                Object.values(data.commanders).forEach(c => {
-                    if(c.card) document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander'));
-                });
-            }
-
             deck = [];
-            if (data.mainboard) {
-                Object.values(data.mainboard).forEach(info => {
-                    for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
-                });
-            }
+            Object.values(data.mainboard).forEach(info => {
+                for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
+            });
 
             shuffleArray(deck);
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
-        } catch (err) { console.error("Failsafe: Errore caricamento mazzo", err); }
+        } catch (err) { console.error("Errore mazzo"); }
     }
 
     function calculateCMC(manaCost) {
@@ -104,81 +101,68 @@
         if (!matches) return 0;
         matches.forEach(m => {
             const val = m.replace('{', '').replace('}', '');
-            if (!isNaN(val)) cmc += parseInt(val);
-            else cmc += 1;
+            if (!isNaN(val)) cmc += parseInt(val); else cmc += 1;
         });
         return cmc;
     }
 
+    function updateCardHighlights() {
+        const untappedLands = document.querySelectorAll('#field-lands .card:not(.tapped)').length;
+        const handCards = document.querySelectorAll('#hand .card');
+
+        handCards.forEach(img => {
+            const cardData = JSON.parse(img.dataset.cardData);
+            const type = (cardData.type_line || "").toLowerCase();
+            
+            if (type.includes('land')) {
+                img.classList.remove('can-cast', 'cant-cast');
+            } else {
+                const cost = calculateCMC(cardData.mana_cost);
+                if (untappedLands >= cost) {
+                    img.classList.add('can-cast');
+                    img.classList.remove('cant-cast');
+                } else {
+                    img.classList.add('cant-cast');
+                    img.classList.remove('can-cast');
+                }
+            }
+        });
+    }
+
     function createCardUI(cardData, location) {
-        if (!cardData || !cardData.scryfall_id) return document.createElement('div');
         const img = document.createElement('img');
         img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
         img.className = 'card ' + (location === 'hand' ? 'hand-card' : '');
-        img.draggable = true;
-        img.dataset.face = "front";
+        img.dataset.cardData = JSON.stringify(cardData); // Salviamo i dati per il ricalcolo
 
         img.onclick = () => {
-            const parent = img.parentElement ? img.parentElement.id : "";
-            if (parent === 'hand' || parent === 'commander-zone') {
+            const parent = img.parentElement.id;
+            if (parent === 'hand') {
                 const type = (cardData.type_line || "").toLowerCase();
+                const cost = calculateCMC(cardData.mana_cost);
+                
                 if (!type.includes('land')) {
-                    const cost = calculateCMC(cardData.mana_cost);
-                    const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
-                    if (untappedLands.length < cost) {
-                        const msg = document.getElementById('error-msg');
-                        msg.style.display = 'block';
-                        setTimeout(() => msg.style.display = 'none', 2000);
-                        return;
-                    }
-                    for (let i = 0; i < cost; i++) { untappedLands[i].classList.add('tapped'); }
+                    const untapped = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
+                    if (untapped.length < cost) return; // Non cliccabile se rossa
+                    for (let i = 0; i < cost; i++) { untapped[i].classList.add('tapped'); }
                 }
-                playCard(cardData, parent === 'hand' ? 'hand' : 'commander');
-            } else if (parent.includes('field')) {
+                playCard(cardData);
+            } else {
                 img.classList.toggle('tapped');
+                updateCardHighlights(); // Ricalcola quando tappi manualmente
             }
-        };
-
-        img.ondragstart = (e) => { draggedCardData = cardData; e.dataTransfer.setData("text/plain", cardData.scryfall_id); setTimeout(() => img.style.opacity = "0.1", 0); };
-        img.ondragend = () => { img.style.opacity = "1"; document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); };
-        
-        img.oncontextmenu = (e) => {
-            e.preventDefault();
-            const hasBack = cardData.card_faces && cardData.card_faces.length > 1;
-            img.dataset.face = img.dataset.face === "front" ? "back" : "front";
-            img.src = img.dataset.face === "back" ? (hasBack ? `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal&face=back` : `https://cards.scryfall.io/large/back.jpg`) : `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
         };
         return img;
     }
 
-    function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-    function drop(e) {
-        e.preventDefault();
-        const zone = e.currentTarget;
-        zone.classList.remove('drag-over');
-        if (!draggedCardData) return;
-        removeFromAll(draggedCardData);
-        if (zone.dataset.zone === 'grave') grave.push(draggedCardData);
-        else if (zone.dataset.zone === 'exile') exile.push(draggedCardData);
-        else if (zone.id === 'hand') hand.push(draggedCardData);
-        else if (zone.id === 'commander-zone') zone.appendChild(createCardUI(draggedCardData, 'commander'));
-        else zone.appendChild(createCardUI(draggedCardData, 'field'));
-        updateUI();
-    }
-
-    function playCard(cardData, from) {
-        removeFromAll(cardData);
+    function playCard(cardData) {
+        const hIdx = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
+        if (hIdx > -1) hand.splice(hIdx, 1);
+        
         const type = (cardData.type_line || "").toLowerCase();
         let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
         updateUI();
-    }
-
-    function removeFromAll(cardData) {
-        const hIdx = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
-        if (hIdx > -1) hand.splice(hIdx, 1);
-        document.querySelectorAll('.card').forEach(c => { if(c.src.includes(cardData.scryfall_id)) c.remove(); });
     }
 
     function updateUI() {
@@ -186,20 +170,23 @@
         handDiv.innerHTML = '';
         hand.forEach(c => handDiv.appendChild(createCardUI(c, 'hand')));
         document.getElementById('count-lib').innerText = deck.length;
-        document.getElementById('count-grave').innerText = grave.length;
-        document.getElementById('count-exile').innerText = exile.length;
-        if (grave.length > 0) document.getElementById('grave-visual').innerHTML = `<img src="https://api.scryfall.com/cards/${grave[grave.length-1].scryfall_id}?format=image&version=small" style="width:100%">`;
-        if (exile.length > 0) document.getElementById('exile-visual').innerHTML = `<img src="https://api.scryfall.com/cards/${exile[exile.length-1].scryfall_id}?format=image&version=small" style="width:100%">`;
+        updateCardHighlights();
     }
 
-    function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
-    function openScry() { if (deck.length === 0) return; const card = deck[deck.length - 1]; document.getElementById('scry-overlay').style.display = 'flex'; document.getElementById('scry-content').innerHTML = `<img src="https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal" style="height:350px; border-radius:15px">`; }
-    function scryAction(pos) { const card = deck.pop(); if (pos === 'top') deck.push(card); else deck.unshift(card); closeScry(); updateUI(); }
-    function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
-    function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
+    function nextTurn() {
+        document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped'));
+        drawCard();
+    }
+
+    function untapAll() {
+        document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped'));
+        updateCardHighlights();
+    }
+
     function drawCard() { if (deck.length > 0) { hand.push(deck.pop()); updateUI(); } }
-    function shuffleDeck() { shuffleArray(deck); updateUI(); }
     function shuffleArray(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } }
+    function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
+
     window.onload = init;
 </script>
 </body>
