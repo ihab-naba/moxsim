@@ -112,23 +112,27 @@
         }
     };
 
-    async function loadMoxfieldDeck(url) {
-        const id = url.split('/decks/')[1]?.split('?')[0];
-        try {
-            const res = await fetch(`https://api.moxfield.com/v2/decks/all/${id}`).then(r => r.json());
-            document.getElementById('deck-title').innerText = res.name;
-            
-            // Estrae le carte
-            Object.values(res.mainboard).forEach(item => {
-                for(let i=0; i<item.quantity; i++) playerDeck.push(item.card.name);
-            });
-            playerDeck.sort(() => Math.random() - 0.5);
-            updateLibraryCount();
-            alert("Mazzo Caricato: " + res.name);
-        } catch (e) {
-            alert("Errore nel caricamento del mazzo.");
-        }
+ async function loadMoxfieldDeck(url) {
+    const id = url.split('/decks/')[1]?.split('?')[0];
+    // Usiamo corsproxy.io per saltare il blocco di sicurezza
+    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent('https://api.moxfield.com/v2/decks/all/' + id)}`;
+    
+    try {
+        const res = await fetch(proxyUrl).then(r => r.json());
+        document.getElementById('deck-title').innerText = res.name;
+        
+        playerDeck = []; // Reset mazzo
+        Object.values(res.mainboard).forEach(item => {
+            for(let i=0; i<item.quantity; i++) playerDeck.push(item.card.name);
+        });
+        playerDeck.sort(() => Math.random() - 0.5);
+        updateLibraryCount();
+        console.log("Mazzo caricato correttamente!");
+    } catch (e) {
+        console.error(e);
+        alert("Errore tecnico. Riprova tra un istante.");
     }
+}
 
     function drawCard() {
         if (playerDeck.length > 0) {
