@@ -2,13 +2,13 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V12</title>
+    <title>MoxSim Arena - Goldfish V13</title>
     <style>
-        :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; }
+        :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; --sleeve: #2c3e50; /* Colore Sleeve */ }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         
         #arena { display: grid; grid-template-columns: 1fr 300px; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
-        #board { display: flex; flex-direction: column; gap: 8px; position: relative; }
+        #board { display: flex; flex-direction: column; gap: 8px; }
         
         .zone { 
             background: var(--panel); border: 1px solid var(--mox-blue); border-radius: 12px; 
@@ -17,23 +17,28 @@
         }
         .zone::before { content: attr(data-label); position: absolute; top: 5px; left: 10px; font-size: 10px; color: var(--gray); font-weight: bold; }
 
-        #bottom-bar { display: flex; height: 150px; gap: 8px; flex-shrink: 0; }
+        #bottom-bar { display: flex; height: 140px; gap: 8px; flex-shrink: 0; }
         
         /* HAND Ottimizzata */
         #hand { flex: 2.5; justify-content: center; overflow: visible !important; z-index: 100; }
-        #hand .card { height: 110px; margin-right: -40px; transition: 0.25s ease; position: relative; }
-        #hand .card:hover { transform: translateY(-100px) scale(2.2); z-index: 1000; margin-right: 30px; margin-left: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); }
+        #hand .card { height: 100px; margin-right: -35px; transition: 0.25s ease; position: relative; }
+        #hand .card:hover { transform: translateY(-110px) scale(2.5); z-index: 1000; margin-right: 40px; margin-left: 40px; box-shadow: 0 15px 50px rgba(0,0,0,0.9); }
 
-        .small-zone { flex: 0.6; justify-content: center; position: relative; }
-        
+        /* LIBRARY - FIX SLEEVE */
+        .small-zone { flex: 0.6; justify-content: center; }
+        .sleeve-back { 
+            width: 75px; height: 105px; background: var(--sleeve); border-radius: 6px; 
+            border: 3px solid #111; box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .sleeve-back::after { content: "MTG"; color: rgba(255,255,255,0.1); font-weight: bold; font-size: 18px; }
+
+        .count-badge { position: absolute; bottom: 8px; right: 8px; background: #000; color: var(--mox-blue); padding: 2px 6px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 12px; }
+
         /* CARTE SUL CAMPO */
-        .card { height: 120px; border-radius: 7px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.5); transition: 0.2s; }
+        .card { height: 120px; border-radius: 7px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
         .field-card:hover { filter: brightness(1.2); box-shadow: 0 0 10px var(--mox-blue); }
         .tapped { transform: rotate(90deg); margin: 0 25px; filter: brightness(0.6) !important; }
-
-        /* LIBRARY */
-        .lib-img { height: 110px; border-radius: 7px; border: 1px solid #333; }
-        .count-badge { position: absolute; bottom: 8px; right: 8px; background: #000; color: var(--mox-blue); padding: 2px 6px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 12px; }
 
         #sidebar { border: 1px solid var(--mox-blue); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
         .life { font-size: 60px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; }
@@ -42,8 +47,8 @@
         .btn:active { box-shadow: 0 2px #6a49ac; transform: translateY(2px); }
         .btn-red { background: #d11326; box-shadow: 0 4px #820914; }
         
-        #commander-zone { margin-top: auto; height: 150px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
-        #commander-zone .card { height: 130px; }
+        #commander-zone { margin-top: auto; height: 140px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
+        #commander-zone .card { height: 120px; }
     </style>
 </head>
 <body>
@@ -95,8 +100,9 @@
             const data = JSON.parse(json.contents);
 
             if (data.commanders) {
-                const cz = document.getElementById('commander-zone');
-                Object.values(data.commanders).forEach(c => cz.appendChild(createCardUI(c.card, 'commander')));
+                Object.values(data.commanders).forEach(c => {
+                    document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander'));
+                });
             }
 
             deck = [];
@@ -107,20 +113,19 @@
             shuffleArray(deck);
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
-        } catch (err) { alert("Errore connessione. Ricarica la pagina."); }
+        } catch (err) { console.error("Errore"); }
     }
 
     function createCardUI(cardData, location = 'hand') {
         const img = document.createElement('img');
         const scryId = cardData.scryfall_id;
         
-        // Setup Immagine (gestione bifronte)
+        // Carica l'immagine iniziale (fronte)
         img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
         img.dataset.face = "front";
         img.className = (location === 'hand' || location === 'commander') ? 'card' : 'card field-card';
         
-        // Click Sinistro: Gioca o Tappa
-        img.onclick = (e) => {
+        img.onclick = () => {
             if (location === 'hand' || location === 'commander') {
                 playCard(cardData, location);
                 if (location === 'commander') img.remove();
@@ -129,11 +134,16 @@
             }
         };
 
-        // Click Destro: Gira la carta (Flip)
+        // Gestione carte Bifronte / Modali col Tasto Destro
         img.oncontextmenu = (e) => {
             e.preventDefault();
+            const hasBack = cardData.card_faces && cardData.card_faces.length > 1;
+            
             if (img.dataset.face === "front") {
-                img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal&face=back`;
+                // Se è modale usa la seconda faccia, altrimenti il retro standard
+                img.src = hasBack 
+                    ? `https://api.scryfall.com/cards/${scryId}?format=image&version=normal&face=back`
+                    : `https://cards.scryfall.io/large/back.jpg`;
                 img.dataset.face = "back";
             } else {
                 img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
@@ -162,12 +172,11 @@
 
         const libDiv = document.getElementById('library');
         libDiv.innerHTML = deck.length > 0 ? 
-            `<img src="https://cards.scryfall.io/large/back.jpg" class="lib-img">
-             <div class="count-badge">${deck.length}</div>` : '';
+            `<div class="sleeve-back"></div><div class="count-badge">${deck.length}</div>` : '';
     }
 
     function untapAll() { document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); }
-    function shuffleDeck() { shuffleArray(deck); updateUI(); }
+    function shuffleDeck() { shuffleArray(deck); alert("Mazzo mescolato!"); updateUI(); }
     function shuffleArray(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
