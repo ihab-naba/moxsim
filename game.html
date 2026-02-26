@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V27 (Token Update)</title>
+    <title>MoxSim Arena - Goldfish V28 (Dynamic Tokens)</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -37,9 +37,10 @@
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
 
         /* Stile per il menu dei Token */
-        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 400px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .btn-token { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; min-width: 100px; }
+        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; gap: 10px; flex-direction: column; align-items: center; max-height: 80vh; overflow-y: auto; width: 320px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        .btn-token { background: #333; border: 1px solid #444; color: white; padding: 12px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; width: 100%; text-align: left; display: flex; align-items: center; gap: 10px; }
         .btn-token:hover { background: var(--mox-blue); }
+        .btn-token img { width: 40px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -86,16 +87,14 @@
 <div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
 <div id="token-menu">
-    <button class="btn-token" onclick="createToken('Soldier', 'Creature', 'https://api.scryfall.com/cards/734277bc-c625-467d-9475-408a28795775?format=image&version=normal')">Soldato 1/1</button>
-    <button class="btn-token" onclick="createToken('Treasure', 'Artifact', 'https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=normal')">Tesoro</button>
-    <button class="btn-token" onclick="createToken('Clue', 'Artifact', 'https://api.scryfall.com/cards/3e089225-8373-42e1-a080-60f1b5250462?format=image&version=normal')">Indizio</button>
-    <button class="btn-token" onclick="createToken('Zombie', 'Creature', 'https://api.scryfall.com/cards/59714392-5036-4074-850d-85208f01b0f2?format=image&version=normal')">Zombie 2/2</button>
-    <button class="btn-token" onclick="createToken('Spirit', 'Creature', 'https://api.scryfall.com/cards/8330d31e-451e-450a-85bc-227096739023?format=image&version=normal')">Spirito 1/1</button>
+    <div style="font-weight: bold; margin-bottom: 10px; color: var(--gray);">Token del Mazzo</div>
+    <div id="token-list" style="width:100%; display:flex; flex-direction:column; gap:8px;">
+        </div>
     <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
 </div>
 
 <script>
-    let deck = [], hand = [], grave = [], exile = [];
+    let deck = [], hand = [], grave = [], exile = [], tokensData = [];
     let life = 40, turn = 1, draggedCardData = null;
 
     async function init() {
@@ -109,39 +108,55 @@
             const response = await fetch(proxy + target);
             const json = await response.json();
             const data = JSON.parse(json.contents);
+            
+            // Carica Comandante
             if (data.commanders) {
                 Object.values(data.commanders).forEach(c => {
                     if(c.card) document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander'));
                 });
             }
+
+            // Carica Mazzo
             deck = [];
             if (data.mainboard) {
                 Object.values(data.mainboard).forEach(info => {
                     for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
                 });
             }
+
+            // CARICA TOKEN DEL MAZZO (DINAMICO!)
+            tokensData = [];
+            if (data.tokens) {
+                tokensData = Object.values(data.tokens).map(t => t.card);
+                populateTokenMenu();
+            }
+
             shuffleDeck();
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
         } catch (err) { console.error("Errore mazzo", err); }
     }
 
-    function calculateCMC(manaCost) {
-        if (!manaCost || typeof manaCost !== 'string') return 0;
-        let cmc = 0;
-        const matches = manaCost.match(/\{(.+?)\}/g);
-        if (!matches) return 0;
-        matches.forEach(m => {
-            const val = m.replace('{', '').replace('}', '');
-            if (!isNaN(val)) cmc += parseInt(val); else cmc += 1;
+    function populateTokenMenu() {
+        const list = document.getElementById('token-list');
+        list.innerHTML = '';
+        tokensData.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-token';
+            btn.onclick = () => createToken(t);
+            btn.innerHTML = `
+                <img src="https://api.scryfall.com/cards/${t.scryfall_id}?format=image&version=small">
+                <span>${t.name}</span>
+            `;
+            list.appendChild(btn);
         });
-        return cmc;
     }
 
     function createCardUI(cardData, location) {
         if (!cardData || !cardData.scryfall_id) return document.createElement('div');
         const img = document.createElement('img');
-        img.src = cardData.image_uris ? cardData.image_uris.normal : `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
+        // Usa direttamente Scryfall per tutte le immagini (molto più affidabile)
+        img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
         img.className = 'card ' + (location === 'hand' ? 'hand-card' : '');
         img.draggable = true;
         img.dataset.cardData = JSON.stringify(cardData);
@@ -190,16 +205,14 @@
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function createToken(name, type, imgUrl) {
-        const tokenData = {
-            name: name,
-            type_line: type,
-            scryfall_id: 'token-' + Date.now(),
-            image_uris: { normal: imgUrl },
-            mana_cost: ""
-        };
-        const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
-        document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
+    function createToken(tokenData) {
+        // Cloniamo l'oggetto per dargli un ID univoco in gioco (permette token multipli)
+        const newToken = {...tokenData, gameId: 'token-' + Date.now()};
+        const type = (newToken.type_line || "").toLowerCase();
+        const zoneId = type.includes('creature') ? 'field-creatures' : 'field-others';
+        
+        const cardEl = createCardUI(newToken, 'field');
+        document.getElementById(zoneId).appendChild(cardEl);
         toggleTokenMenu();
     }
 
@@ -207,7 +220,8 @@
         if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
         document.querySelectorAll('.card').forEach(c => {
             const data = JSON.parse(c.dataset.cardData || "{}");
-            if(data.scryfall_id === cardData.scryfall_id && (c.parentElement.id === from || c.parentElement.classList.contains('zone'))) {
+            // Se è un token, controlliamo il gameId o l'id scryfall
+            if((data.gameId && data.gameId === cardData.gameId) || (data.scryfall_id === cardData.scryfall_id && c.parentElement.id === from)) {
                 c.remove();
             }
         });
@@ -230,6 +244,18 @@
         updateUI();
     }
 
+    function calculateCMC(manaCost) {
+        if (!manaCost || typeof manaCost !== 'string') return 0;
+        let cmc = 0;
+        const matches = manaCost.match(/\{(.+?)\}/g);
+        if (!matches) return 0;
+        matches.forEach(m => {
+            const val = m.replace('{', '').replace('}', '');
+            if (!isNaN(val)) cmc += parseInt(val); else cmc += 1;
+        });
+        return cmc;
+    }
+
     function updateUI() {
         const handDiv = document.getElementById('hand');
         handDiv.innerHTML = '';
@@ -242,8 +268,8 @@
         document.getElementById('count-lib').innerText = deck.length;
         document.getElementById('count-grave').innerText = grave.length;
         document.getElementById('count-exile').innerText = exile.length;
-        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris ? grave[grave.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+grave[grave.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
-        document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris ? exile[exile.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+exile[exile.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
+        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="https://api.scryfall.com/cards/${grave[grave.length-1].scryfall_id}?format=image&version=small" style="width:100%">` : '';
+        document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="https://api.scryfall.com/cards/${exile[exile.length-1].scryfall_id}?format=image&version=small" style="width:100%">` : '';
     }
 
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
