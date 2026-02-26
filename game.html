@@ -214,18 +214,18 @@
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    function createToken(name, type, imgUrl) {
-        const tokenData = {
-            name: name,
-            type_line: type,
-            scryfall_id: 'token-' + Date.now(),
-            image_uris: { normal: imgUrl },
-            mana_cost: ""
-        };
-        const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
-        document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
-        toggleTokenMenu();
-    }
+ function createToken(name, type, scryId) {
+    const tokenData = {
+        name: name,
+        type_line: type,
+        scryfall_id: scryId, // Passiamo l'ID, non l'URL
+        image_uris: null,    // Costringiamo il sistema a usare il link API
+        mana_cost: ""
+    };
+    const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
+    document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
+    toggleTokenMenu();
+}
 
     function removeFromAll(cardData, from) {
         if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
