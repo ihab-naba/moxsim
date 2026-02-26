@@ -9,8 +9,6 @@
             --bg-black: #000000;
             --zone-bg: #0d0d0d;
             --mox-blue: #007bff;
-            --btn-purple: #9a73ef;
-            --btn-red: #d11326;
             --text-gray: #888;
         }
 
@@ -64,14 +62,21 @@
         }
         .card-img:hover { transform: translateY(-10px) scale(1.05); z-index: 100; }
 
+        /* Contatore Mazzo */
+        .lib-count {
+            position: absolute; bottom: 10px; right: 10px;
+            background: rgba(0,0,0,0.8); padding: 2px 6px;
+            border-radius: 4px; font-size: 12px; font-weight: bold; color: var(--mox-blue);
+        }
+
         /* Animazione Shuffle */
         @keyframes shuffleMove {
-            0% { transform: rotate(0deg) translateX(0); }
-            25% { transform: rotate(5deg) translateX(10px); }
-            75% { transform: rotate(-5deg) translateX(-10px); }
-            100% { transform: rotate(0deg) translateX(0); }
+            0% { transform: translate(0,0) rotate(0); }
+            25% { transform: translate(15px, -10px) rotate(5deg); }
+            50% { transform: translate(-15px, 5px) rotate(-5deg); }
+            100% { transform: translate(0,0) rotate(0); }
         }
-        .shuffling { animation: shuffleMove 0.3s ease-in-out infinite; }
+        .shuffling img { animation: shuffleMove 0.2s infinite; }
 
         #sidebar {
             border: 1px solid var(--mox-blue); border-radius: 8px;
@@ -103,7 +108,7 @@
         <div class="main-zone" data-label="LAND" id="zone-lands"></div>
         
         <div id="bottom-row">
-            <div id="hand-zone" data-label="LA TUA MANO"></div>
+            <div id="hand-zone" data-label="LA TUA MANO" id="hand-display"></div>
             <div class="mini-zone" data-label="MAZZO" id="library-zone"></div>
             <div class="mini-zone" data-label="CIMITERO" id="zone-graveyard"></div>
             <div class="mini-zone" data-label="ESILIO" id="zone-exile"></div>
@@ -113,7 +118,7 @@
     <div id="sidebar">
         <div style="text-align:right; font-size:10px; cursor:pointer;" onclick="location.href='index.html'">← ESCI</div>
         <div class="life-display" id="life-val">40</div>
-        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:center; gap:10px;">
             <button class="pill-btn" style="width:45px" onclick="updateLife(-1)">-</button>
             <button class="pill-btn" style="width:45px" onclick="updateLife(1)">+</button>
         </div>
@@ -138,11 +143,16 @@
 
         const deckId = deckUrl.split('/').pop().split('?')[0];
         
+        // USIAMO UN PROXY PER EVITARE I BLOCCHI (CORS)
+        const proxyUrl = "https://api.allorigins.win/get?url=";
+        const targetUrl = encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`);
+
         try {
-            const resp = await fetch(`https://api.moxfield.com/v2/decks/all/${deckId}`);
-            const data = await resp.json();
+            const resp = await fetch(proxyUrl + targetUrl);
+            const rawData = await resp.json();
+            const data = JSON.parse(rawData.contents);
             
-            // Carica Comandante
+            // 1. Carica Comandante
             if (data.commanders) {
                 const cmdBox = document.getElementById('commander-box');
                 Object.values(data.commanders).forEach(card => {
@@ -150,7 +160,7 @@
                 });
             }
 
-            // Popola Mazzo
+            // 2. Popola Mazzo
             library = [];
             Object.values(data.mainboard).forEach(cardData => {
                 for (let i = 0; i < cardData.quantity; i++) {
@@ -159,26 +169,28 @@
             });
             
             shuffleArray(library);
-            updateLibraryUI();
             
-            // Pesca 7 iniziali
+            // 3. Pesca 7 iniziali
             for(let i=0; i<7; i++) {
                 if(library.length > 0) hand.push(library.pop());
             }
+
             updateHandUI();
             updateLibraryUI();
 
         } catch (e) {
-            console.error("Errore:", e);
+            console.error("Errore Caricamento:", e);
+            alert("Errore nel caricamento del mazzo. Riprova tra un istante.");
         }
     }
 
     function createCardUI(cardData, context) {
         const img = document.createElement('img');
         const scryId = cardData.scryfall_id;
-        // Immagine retro se è nel mazzo, altrimenti fronte
+        
+        // Link diretto immagine Scryfall
         img.src = (context === 'library') 
-            ? "https://deckmaster.info/images/cards/back.png" 
+            ? "https://cards.scryfall.io/large/back.jpg" 
             : `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
         
         img.className = 'card-img';
@@ -187,13 +199,15 @@
     }
 
     function animateShuffle() {
+        if (library.length === 0) return;
         const libZone = document.getElementById('library-zone');
         libZone.classList.add('shuffling');
         
         setTimeout(() => {
             shuffleArray(library);
             libZone.classList.remove('shuffling');
-        }, 1000);
+            updateLibraryUI();
+        }, 800);
     }
 
     function shuffleArray(array) {
@@ -211,7 +225,7 @@
     }
 
     function updateHandUI() {
-        const handDiv = document.querySelector('[data-label="LA TUA MANO"]');
+        const handDiv = document.getElementById('hand-display');
         handDiv.innerHTML = '';
         hand.forEach(card => handDiv.appendChild(createCardUI(card, 'hand')));
     }
@@ -221,16 +235,24 @@
         libDiv.innerHTML = '';
         if (library.length > 0) {
             libDiv.appendChild(createCardUI(library[library.length-1], 'library'));
+            const count = document.createElement('div');
+            count.className = 'lib-count';
+            count.innerText = library.length;
+            libDiv.appendChild(count);
         }
     }
 
     function playCard(cardData) {
-        hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id || hand.indexOf(c) !== hand.indexOf(cardData));
+        // Rimuove la carta specifica dalla mano
+        const index = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
+        if (index > -1) hand.splice(index, 1);
+        
         updateHandUI();
 
         let zoneId = 'zone-others';
-        if (cardData.type_line.toLowerCase().includes('land')) zoneId = 'zone-lands';
-        else if (cardData.type_line.toLowerCase().includes('creature')) zoneId = 'zone-creatures';
+        const type = cardData.type_line.toLowerCase();
+        if (type.includes('land')) zoneId = 'zone-lands';
+        else if (type.includes('creature')) zoneId = 'zone-creatures';
 
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
     }
