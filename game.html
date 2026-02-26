@@ -2,9 +2,9 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V13</title>
+    <title>MoxSim Arena - Goldfish V14</title>
     <style>
-        :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; --sleeve: #2c3e50; /* Colore Sleeve */ }
+        :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; --sleeve-color: #2c3e50; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         
         #arena { display: grid; grid-template-columns: 1fr 300px; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
@@ -19,35 +19,37 @@
 
         #bottom-bar { display: flex; height: 140px; gap: 8px; flex-shrink: 0; }
         
-        /* HAND Ottimizzata */
+        /* HAND */
         #hand { flex: 2.5; justify-content: center; overflow: visible !important; z-index: 100; }
-        #hand .card { height: 100px; margin-right: -35px; transition: 0.25s ease; position: relative; }
-        #hand .card:hover { transform: translateY(-110px) scale(2.5); z-index: 1000; margin-right: 40px; margin-left: 40px; box-shadow: 0 15px 50px rgba(0,0,0,0.9); }
+        #hand .card { height: 100px; margin-right: -35px; transition: 0.25s ease; position: relative; z-index: 10; }
+        #hand .card:hover { transform: translateY(-110px) scale(2.6); z-index: 1000 !important; margin: 0 45px; box-shadow: 0 15px 50px rgba(0,0,0,0.9); }
 
-        /* LIBRARY - FIX SLEEVE */
-        .small-zone { flex: 0.6; justify-content: center; }
+        /* LIBRARY & SLEEVES */
+        .small-zone { flex: 0.6; justify-content: center; flex-direction: column; gap: 5px; }
         .sleeve-back { 
-            width: 75px; height: 105px; background: var(--sleeve); border-radius: 6px; 
-            border: 3px solid #111; box-shadow: inset 0 0 10px rgba(255,255,255,0.1);
-            display: flex; align-items: center; justify-content: center; position: relative;
+            width: 70px; height: 98px; background: var(--sleeve-color); border-radius: 5px; 
+            border: 2px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: background 0.3s;
         }
-        .sleeve-back::after { content: "MTG"; color: rgba(255,255,255,0.1); font-weight: bold; font-size: 18px; }
+        #sleeve-selector { 
+            background: #1a1a1a; color: white; border: 1px solid var(--gray); 
+            font-size: 10px; border-radius: 4px; cursor: pointer; width: 80%;
+        }
 
-        .count-badge { position: absolute; bottom: 8px; right: 8px; background: #000; color: var(--mox-blue); padding: 2px 6px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 12px; }
+        .count-badge { position: absolute; top: 30px; right: 15px; background: rgba(0,0,0,0.8); color: white; padding: 1px 5px; border-radius: 4px; font-size: 11px; font-weight: bold; }
 
-        /* CARTE SUL CAMPO */
+        /* FIELD CARDS */
         .card { height: 120px; border-radius: 7px; cursor: pointer; flex-shrink: 0; transition: 0.2s; }
-        .field-card:hover { filter: brightness(1.2); box-shadow: 0 0 10px var(--mox-blue); }
+        .field-card:hover { filter: brightness(1.2); outline: 2px solid var(--mox-blue); }
         .tapped { transform: rotate(90deg); margin: 0 25px; filter: brightness(0.6) !important; }
 
         #sidebar { border: 1px solid var(--mox-blue); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
         .life { font-size: 60px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; }
         
-        .btn { background: #9a73ef; border: none; padding: 10px; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 4px #6a49ac; }
-        .btn:active { box-shadow: 0 2px #6a49ac; transform: translateY(2px); }
-        .btn-red { background: #d11326; box-shadow: 0 4px #820914; }
+        .btn { background: #9a73ef; border: none; padding: 10px; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; }
+        .btn-red { background: #d11326; }
         
-        #commander-zone { margin-top: auto; height: 140px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
+        #commander-zone { margin-top: auto; height: 140px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; }
         #commander-zone .card { height: 120px; }
     </style>
 </head>
@@ -60,7 +62,18 @@
         <div class="zone" data-label="LANDS" id="field-lands"></div>
         <div id="bottom-bar">
             <div class="zone" data-label="HAND" id="hand"></div>
-            <div class="zone small-zone" data-label="LIBRARY" id="library"></div>
+            <div class="zone small-zone" data-label="LIBRARY" id="library">
+                <div class="sleeve-back" id="sleeve-visual"></div>
+                <select id="sleeve-selector" onchange="changeSleeve(this.value)">
+                    <option value="#2c3e50">Dark Blue</option>
+                    <option value="#b22222">Fire Red</option>
+                    <option value="#228b22">Forest Green</option>
+                    <option value="#4b0082">Phyrexian Purple</option>
+                    <option value="#d4af37">Gold</option>
+                    <option value="#ff69b4">MoxPink</option>
+                </select>
+                <div class="count-badge" id="card-count">0</div>
+            </div>
             <div class="zone small-zone" data-label="GRAVEYARD" id="graveyard"></div>
             <div class="zone small-zone" data-label="EXILE" id="exile"></div>
         </div>
@@ -69,9 +82,9 @@
     <div id="sidebar">
         <div style="text-align:right; font-size: 11px; cursor: pointer; color: var(--gray);" onclick="window.location.href='index.html'">← ESCI</div>
         <div class="life" id="life-display">40</div>
-        <div style="display:flex; gap:10px; justify-content:center; margin-bottom: 5px;">
-            <button class="btn" style="width:45px" onclick="changeLife(-1)">-</button>
-            <button class="btn" style="width:45px" onclick="changeLife(1)">+</button>
+        <div style="display:flex; gap:10px; justify-content:center;">
+            <button class="btn" style="flex:1" onclick="changeLife(-1)">-</button>
+            <button class="btn" style="flex:1" onclick="changeLife(1)">+</button>
         </div>
         <button class="btn" onclick="untapAll()">Untap All</button>
         <button class="btn" onclick="shuffleDeck()">Shuffle</button>
@@ -113,14 +126,17 @@
             shuffleArray(deck);
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
-        } catch (err) { console.error("Errore"); }
+        } catch (err) { alert("Mazzo non caricato. Verifica il link!"); }
+    }
+
+    function changeSleeve(color) {
+        document.documentElement.style.setProperty('--sleeve-color', color);
     }
 
     function createCardUI(cardData, location = 'hand') {
         const img = document.createElement('img');
         const scryId = cardData.scryfall_id;
         
-        // Carica l'immagine iniziale (fronte)
         img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
         img.dataset.face = "front";
         img.className = (location === 'hand' || location === 'commander') ? 'card' : 'card field-card';
@@ -134,23 +150,19 @@
             }
         };
 
-        // Gestione carte Bifronte / Modali col Tasto Destro
         img.oncontextmenu = (e) => {
             e.preventDefault();
             const hasBack = cardData.card_faces && cardData.card_faces.length > 1;
-            
             if (img.dataset.face === "front") {
-                // Se è modale usa la seconda faccia, altrimenti il retro standard
                 img.src = hasBack 
                     ? `https://api.scryfall.com/cards/${scryId}?format=image&version=normal&face=back`
-                    : `https://cards.scryfall.io/large/back.jpg`;
+                    : `https://cards.scryfall.io/large/back.jpg`; // Retro standard per le normali
                 img.dataset.face = "back";
             } else {
                 img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
                 img.dataset.face = "front";
             }
         };
-
         return img;
     }
 
@@ -169,14 +181,12 @@
         const handDiv = document.getElementById('hand');
         handDiv.innerHTML = '';
         hand.forEach(c => handDiv.appendChild(createCardUI(c, 'hand')));
-
-        const libDiv = document.getElementById('library');
-        libDiv.innerHTML = deck.length > 0 ? 
-            `<div class="sleeve-back"></div><div class="count-badge">${deck.length}</div>` : '';
+        document.getElementById('card-count').innerText = deck.length;
+        document.getElementById('sleeve-visual').style.display = deck.length > 0 ? 'block' : 'none';
     }
 
     function untapAll() { document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); }
-    function shuffleDeck() { shuffleArray(deck); alert("Mazzo mescolato!"); updateUI(); }
+    function shuffleDeck() { shuffleArray(deck); updateUI(); }
     function shuffleArray(arr) {
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
