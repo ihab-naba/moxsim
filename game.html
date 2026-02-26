@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V10</title>
+    <title>MoxSim Arena - Goldfish V11</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -18,18 +18,18 @@
         .zone::before { content: attr(data-label); position: absolute; top: 5px; left: 10px; font-size: 10px; color: var(--gray); font-weight: bold; }
 
         #bottom-bar { display: flex; height: 180px; gap: 8px; flex-shrink: 0; }
-        #hand { flex: 2.5; justify-content: center; overflow: hidden; }
-        #hand .card { height: 155px; width: auto; margin-right: -45px; transition: 0.2s; z-index: 1; }
-        #hand .card:hover { transform: translateY(-30px) scale(1.3); z-index: 100; margin-right: 10px; margin-left: 10px; }
+        
+        /* HAND: Ora le carte possono uscire dal riquadro quando ingrandite */
+        #hand { flex: 2.5; justify-content: center; overflow: visible; z-index: 10; }
+        #hand .card { height: 155px; width: auto; margin-right: -45px; transition: 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); position: relative; }
+        #hand .card:hover { transform: translateY(-80px) scale(1.6); z-index: 1000; margin-right: 20px; margin-left: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
 
         .small-zone { flex: 0.6; justify-content: center; overflow: hidden; }
         
-        /* CARTE SUL CAMPO */
         .card { height: 130px; border-radius: 8px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: 0.2s; }
-        .zone .card:hover { filter: brightness(1.2); outline: 2px solid var(--mox-blue); }
-        .tapped { transform: rotate(90deg); margin: 0 20px; filter: brightness(0.6) !important; }
+        .field-card:hover { filter: brightness(1.2); outline: 2px solid var(--mox-blue); }
+        .tapped { transform: rotate(90deg); margin: 0 25px; filter: brightness(0.6) !important; }
 
-        /* FIX MAZZO */
         .library-back { height: 130px; border-radius: 8px; border: 1px solid #333; }
         .count-badge { position: absolute; bottom: 10px; right: 10px; background: #000; color: var(--mox-blue); padding: 2px 8px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 14px; }
 
@@ -41,7 +41,8 @@
         .btn-red { background: #d11326; box-shadow: 0 4px #820914; }
         
         #commander-zone { margin-top: auto; height: 180px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
-        #commander-zone .card { height: 160px; }
+        #commander-zone .card { height: 160px; transition: 0.2s; }
+        #commander-zone .card:hover { transform: scale(1.05); filter: brightness(1.2); }
     </style>
 </head>
 <body>
@@ -52,7 +53,7 @@
         <div class="zone" data-label="OTHERS" id="field-others"></div>
         <div class="zone" data-label="LANDS" id="field-lands"></div>
         <div id="bottom-bar">
-            <div class="zone" data-label="LA TUA MANO" id="hand"></div>
+            <div class="zone" data-label="HAND" id="hand"></div>
             <div class="zone small-zone" data-label="MAZZO" id="library"></div>
             <div class="zone small-zone" data-label="CIMITERO" id="graveyard"></div>
             <div class="zone small-zone" data-label="ESILIO" id="exile"></div>
@@ -94,7 +95,10 @@
 
             if (data.commanders) {
                 const cz = document.getElementById('commander-zone');
-                Object.values(data.commanders).forEach(c => cz.appendChild(createCardUI(c.card, 'field')));
+                Object.values(data.commanders).forEach(c => {
+                    const img = createCardUI(c.card, 'commander');
+                    cz.appendChild(img);
+                });
             }
 
             deck = [];
@@ -105,30 +109,36 @@
             shuffleArray(deck);
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
-        } catch (err) { console.error("Errore caricamento"); }
+        } catch (err) { console.error("Errore"); }
     }
 
     function createCardUI(cardData, location = 'hand') {
         const img = document.createElement('img');
         img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
-        img.className = 'card';
+        img.className = location === 'hand' || location === 'commander' ? 'card' : 'card field-card';
         
         img.onclick = () => {
-            if (location === 'hand') playCard(cardData);
-            else img.classList.toggle('tapped');
+            if (location === 'hand' || location === 'commander') {
+                playCard(cardData, location);
+                if (location === 'commander') img.remove(); // Rimuove dalla CZ quando giocato
+            } else {
+                img.classList.toggle('tapped');
+            }
         };
         return img;
     }
 
-    function playCard(cardData) {
-        const idx = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
-        if (idx > -1) {
-            hand.splice(idx, 1);
-            const type = (cardData.type_line || "").toLowerCase();
-            let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-            document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
-            updateUI();
+    function playCard(cardData, from = 'hand') {
+        if (from === 'hand') {
+            const idx = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
+            if (idx > -1) hand.splice(idx, 1);
         }
+        
+        const type = (cardData.type_line || "").toLowerCase();
+        let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
+        
+        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
+        updateUI();
     }
 
     function untapAll() {
@@ -160,7 +170,6 @@
         hand.forEach(c => handDiv.appendChild(createCardUI(c, 'hand')));
 
         const libDiv = document.getElementById('library');
-        // USIAMO UN'IMMAGINE STATICA PER IL RETRO
         libDiv.innerHTML = deck.length > 0 ? 
             `<img src="https://cards.scryfall.io/large/back.jpg" class="library-back">
              <div class="count-badge">${deck.length}</div>` : '';
