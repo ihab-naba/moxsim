@@ -15,208 +15,174 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg-black);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: white;
-            height: 100vh;
-            overflow: hidden;
+            font-family: -apple-system, system-ui, sans-serif;
+            color: white; height: 100vh; overflow: hidden;
         }
 
         #arena-wrapper {
             display: grid;
             grid-template-columns: 1fr 280px;
-            height: 100vh;
-            padding: 10px;
-            box-sizing: border-box;
-            gap: 10px;
+            height: 100vh; padding: 10px; box-sizing: border-box; gap: 10px;
         }
 
-        /* --- CAMPO DA GIOCO (SINISTRA) --- */
-        #play-area {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        #play-area { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }
 
         .main-zone {
-            flex: 1;
-            background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue);
-            border-radius: 12px;
-            position: relative;
+            flex: 1; background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 12px;
+            position: relative; overflow-x: auto; display: flex; align-items: center; padding: 0 15px;
         }
 
-        /* --- ZONA INFERIORE (MANO + MINI ZONE) --- */
-        #bottom-row {
-            display: flex;
-            height: 220px;
-            gap: 10px;
-        }
+        #bottom-row { display: flex; height: 220px; gap: 10px; }
 
         #hand-zone {
-            flex: 2;
-            background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue);
-            border-radius: 4px; /* Angoli più netti come in fdhgc.png */
-            position: relative;
-        }
-
-        .mini-column {
-            flex: 1.5;
-            display: flex;
-            gap: 10px;
+            flex: 2; background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 4px;
+            position: relative; display: flex; align-items: center; 
+            padding: 0 10px; gap: 5px; overflow-x: auto;
         }
 
         .mini-zone {
-            flex: 1;
-            background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue);
-            border-radius: 4px;
-            position: relative;
+            flex: 1; background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 4px;
+            position: relative; display: flex; align-items: center; justify-content: center;
         }
 
-        /* Label in alto a sinistra */
         .main-zone::before, #hand-zone::before, .mini-zone::before {
-            content: attr(data-label);
-            position: absolute;
-            top: 8px;
-            left: 10px;
-            font-size: 10px;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            font-weight: bold;
+            content: attr(data-label); position: absolute;
+            top: 8px; left: 10px; font-size: 10px;
+            color: var(--text-gray); text-transform: uppercase; font-weight: bold; z-index: 10;
         }
 
-        /* --- SIDEBAR (DESTRA) --- */
+        /* Stile Carte */
+        .card-img {
+            height: 160px; border-radius: 8px; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        }
+        .card-img:hover { transform: scale(1.1); z-index: 100; box-shadow: 0 0 15px var(--mox-blue); }
+
+        /* Sidebar */
         #sidebar {
-            border: 1px solid var(--mox-blue);
-            border-radius: 4px;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            gap: 15px;
-            background-color: var(--bg-black);
+            border: 1px solid var(--mox-blue); border-radius: 4px;
+            display: flex; flex-direction: column; padding: 15px; gap: 10px;
         }
 
-        .exit-link {
-            text-align: right;
-            font-size: 12px;
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        .life-section {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .life-label { font-size: 12px; color: #444; font-weight: bold; }
-        .life-display { font-size: 60px; font-weight: 900; color: var(--mox-blue); margin: 5px 0; }
-
-        .life-btns { display: flex; justify-content: center; gap: 15px; }
-        .btn-circle {
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            border: none;
-            background: #222;
-            color: white;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        /* --- PULSANTI STILE PILLOLA (fdhgc.png) --- */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
+        .life-display { font-size: 60px; font-weight: 900; color: var(--mox-blue); text-align: center; }
+        
         .pill-btn {
             background: linear-gradient(180deg, #b598f3 0%, #7d5bbe 100%);
-            border: 1px solid #6a49ac;
-            border-radius: 50px;
-            color: white;
-            padding: 8px;
-            font-weight: bold;
-            font-size: 13px;
-            cursor: pointer;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            border: 1px solid #6a49ac; border-radius: 50px; color: white;
+            padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer;
         }
+        .pill-btn.red { background: linear-gradient(180deg, #e63946 0%, #a30b18 100%); border: 1px solid #820914; }
 
-        .pill-btn.red {
-            background: linear-gradient(180deg, #e63946 0%, #a30b18 100%);
-            border: 1px solid #820914;
-        }
-
-        /* Zona Commander in basso */
-        #commander-box {
-            margin-top: auto;
-            height: 180px;
-            border: 1px solid var(--mox-blue);
-            border-radius: 4px;
-            position: relative;
-        }
-        #commander-box::before {
-            content: "COMMANDER";
-            position: absolute;
-            top: 8px;
-            left: 10px;
-            font-size: 10px;
-            color: var(--text-gray);
-        }
-
+        #commander-box { margin-top: auto; height: 180px; border: 1px solid var(--mox-blue); border-radius: 4px; position: relative; }
     </style>
 </head>
 <body>
 
 <div id="arena-wrapper">
     <div id="play-area">
-        <div class="main-zone" data-label="CREATURES"></div>
-        <div class="main-zone" data-label="OTHERS"></div>
-        <div class="main-zone" data-label="LAND"></div>
+        <div class="main-zone" data-label="CREATURES" id="zone-creatures"></div>
+        <div class="main-zone" data-label="OTHERS" id="zone-others"></div>
+        <div class="main-zone" data-label="LAND" id="zone-lands"></div>
         
         <div id="bottom-row">
             <div id="hand-zone" data-label="LA TUA MANO"></div>
-            <div class="mini-column">
-                <div class="mini-zone" data-label="MAZZO"></div>
-                <div class="mini-zone" data-label="CIMITERO"></div>
-                <div class="mini-zone" data-label="ESILIO"></div>
-            </div>
+            <div class="mini-zone" data-label="MAZZO" id="zone-library"></div>
+            <div class="mini-zone" data-label="CIMITERO" id="zone-graveyard"></div>
+            <div class="mini-zone" data-label="ESILIO" id="zone-exile"></div>
         </div>
     </div>
 
     <div id="sidebar">
-        <a href="index.html" class="exit-link">← ESCI DALL'ARENA</a>
-        
-        <div class="life-section">
-            <div class="life-label">PLAYER LIFE</div>
-            <div class="life-display">40</div>
-            <div class="life-btns">
-                <button class="btn-circle">-</button>
-                <button class="btn-circle">+</button>
-            </div>
+        <a href="index.html" style="color:white; text-decoration:none; font-size:12px; text-align:right;">← ESCI</a>
+        <div class="life-display" id="life-val">40</div>
+        <div style="display:flex; justify-content:center; gap:10px;">
+            <button class="pill-btn" style="width:40px" onclick="updateLife(-1)">-</button>
+            <button class="pill-btn" style="width:40px" onclick="updateLife(1)">+</button>
         </div>
 
-        <div class="controls">
-            <button class="pill-btn">Player ▾</button>
-            <button class="pill-btn">Sleeves ▾</button>
-            <button class="pill-btn">Restart</button>
-            <button class="pill-btn">Add Token ▾</button>
-            <button class="pill-btn">Shuffle</button>
-            <button class="pill-btn">View Library</button>
-            <button class="pill-btn">Draw</button>
-            <button class="pill-btn red">Next Turn</button>
-        </div>
+        <button class="pill-btn">Player ▾</button>
+        <button class="pill-btn" onclick="shuffleDeck()">Shuffle</button>
+        <button class="pill-btn" onclick="drawCard()">Draw</button>
+        <button class="pill-btn red">Next Turn</button>
 
-        <div id="commander-box"></div>
+        <div id="commander-box" data-label="COMMANDER"></div>
     </div>
 </div>
 
+<script>
+    let library = [];
+    let hand = [];
+    let life = 40;
+
+    // Carica il mazzo all'avvio
+    async function init() {
+        const params = new URLSearchParams(window.location.search);
+        const deckUrl = params.get('deck');
+        if (!deckUrl) return;
+
+        const deckId = deckUrl.split('/').pop().split('?')[0];
+        
+        try {
+            const resp = await fetch(`https://api.moxfield.com/v2/decks/all/${deckId}`);
+            const data = await resp.json();
+            
+            // Popoliamo la library con le immagini di Scryfall
+            library = [];
+            for (const [name, cardData] of Object.entries(data.mainboard)) {
+                for (let i = 0; i < cardData.quantity; i++) {
+                    library.push({
+                        name: name,
+                        img: cardData.card.scryfall_uri 
+                            ? `https://api.scryfall.com/cards/${cardData.card.scryfall_id}?format=image`
+                            : 'https://i.imgur.com/7sC7Y77.png'
+                    });
+                }
+            }
+            shuffleDeck();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function shuffleDeck() {
+        for (let i = library.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [library[i], library[j]] = [library[j], library[i]];
+        }
+        alert("Mazzo Mescolato!");
+    }
+
+    function drawCard() {
+        if (library.length === 0) return;
+        const card = library.pop();
+        hand.push(card);
+        updateHandUI();
+    }
+
+    function updateHandUI() {
+        const handDiv = document.querySelector('#hand-zone');
+        handDiv.innerHTML = '';
+        hand.forEach(card => {
+            const img = document.createElement('img');
+            img.src = card.img;
+            img.className = 'card-img';
+            img.onclick = () => playCard(card); // Esempio: clicca per giocare
+            handDiv.appendChild(img);
+        });
+    }
+
+    function updateLife(amt) {
+        life += amt;
+        document.getElementById('life-val').innerText = life;
+    }
+
+    window.onload = init;
+</script>
 </body>
 </html>
