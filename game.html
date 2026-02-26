@@ -27,30 +27,22 @@
             height: 100vh; padding: 10px; box-sizing: border-box; gap: 10px;
         }
 
-        #play-area { 
-            display: flex; flex-direction: column; gap: 8px; height: 100%;
-        }
+        #play-area { display: flex; flex-direction: column; gap: 8px; height: 100%; }
 
-        /* Proporzioni Zone Superiori */
         .main-zone {
-            flex: 1.2; /* Leggermente più grandi */
-            background-color: var(--zone-bg);
+            flex: 1.2; background-color: var(--zone-bg);
             border: 1px solid var(--mox-blue); border-radius: 12px;
             position: relative; display: flex; align-items: center; 
             padding: 20px 15px 5px 15px; gap: 8px; overflow-x: auto;
         }
 
-        /* Proporzioni Barra Inferiore (Fissa per non rompere il layout) */
-        #bottom-row { 
-            height: 180px; display: flex; gap: 8px; margin-top: 5px;
-        }
+        #bottom-row { height: 180px; display: flex; gap: 8px; margin-top: 5px; }
 
         #hand-zone {
             flex: 2.5; background-color: var(--zone-bg);
             border: 1px solid var(--mox-blue); border-radius: 8px;
             position: relative; display: flex; align-items: center; 
-            padding: 0 10px; gap: -20px; /* Carte leggermente sovrapposte */
-            overflow-x: auto;
+            padding: 0 10px; gap: 5px; overflow-x: auto;
         }
 
         .mini-zone {
@@ -59,14 +51,12 @@
             position: relative; display: flex; align-items: center; justify-content: center;
         }
 
-        /* Label */
         .main-zone::before, #hand-zone::before, .mini-zone::before, #commander-box::before {
             content: attr(data-label); position: absolute;
             top: 6px; left: 10px; font-size: 9px;
             color: var(--text-gray); text-transform: uppercase; font-weight: bold; z-index: 10;
         }
 
-        /* Stile Carte */
         .card-img {
             height: 140px; border-radius: 6px; cursor: pointer;
             transition: transform 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
@@ -74,7 +64,15 @@
         }
         .card-img:hover { transform: translateY(-10px) scale(1.05); z-index: 100; }
 
-        /* Sidebar */
+        /* Animazione Shuffle */
+        @keyframes shuffleMove {
+            0% { transform: rotate(0deg) translateX(0); }
+            25% { transform: rotate(5deg) translateX(10px); }
+            75% { transform: rotate(-5deg) translateX(-10px); }
+            100% { transform: rotate(0deg) translateX(0); }
+        }
+        .shuffling { animation: shuffleMove 0.3s ease-in-out infinite; }
+
         #sidebar {
             border: 1px solid var(--mox-blue); border-radius: 8px;
             display: flex; flex-direction: column; padding: 15px; gap: 10px;
@@ -86,7 +84,6 @@
             background: linear-gradient(180deg, #b598f3 0%, #7d5bbe 100%);
             border: 1px solid #6a49ac; border-radius: 50px; color: white;
             padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .pill-btn.red { background: linear-gradient(180deg, #e63946 0%, #a30b18 100%); border: 1px solid #820914; }
 
@@ -95,10 +92,6 @@
             border: 1px solid var(--mox-blue); border-radius: 8px; 
             position: relative; display: flex; align-items: center; justify-content: center;
         }
-
-        /* Scrollbar sottile */
-        ::-webkit-scrollbar { height: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--mox-blue); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -110,10 +103,8 @@
         <div class="main-zone" data-label="LAND" id="zone-lands"></div>
         
         <div id="bottom-row">
-            <div id="hand-zone" data-label="LA TUA MANO" id="hand-display"></div>
-            <div class="mini-zone" data-label="MAZZO" id="library-display">
-                <img src="https://deckmaster.info/images/cards/back.png" style="height:140px; border-radius:6px; opacity:0.5;">
-            </div>
+            <div id="hand-zone" data-label="LA TUA MANO"></div>
+            <div class="mini-zone" data-label="MAZZO" id="library-zone"></div>
             <div class="mini-zone" data-label="CIMITERO" id="zone-graveyard"></div>
             <div class="mini-zone" data-label="ESILIO" id="zone-exile"></div>
         </div>
@@ -127,7 +118,7 @@
             <button class="pill-btn" style="width:45px" onclick="updateLife(1)">+</button>
         </div>
 
-        <button class="pill-btn" onclick="shuffleDeck()">Shuffle</button>
+        <button class="pill-btn" onclick="animateShuffle()">Shuffle</button>
         <button class="pill-btn" onclick="drawCard()">Draw</button>
         <button class="pill-btn red" onclick="location.reload()">Restart</button>
 
@@ -145,92 +136,103 @@
         let deckUrl = params.get('deck');
         if (!deckUrl) return;
 
-        // Pulizia ID Moxfield
-        const parts = deckUrl.split('/');
-        const deckId = parts[parts.length - 1].split('?')[0];
+        const deckId = deckUrl.split('/').pop().split('?')[0];
         
         try {
             const resp = await fetch(`https://api.moxfield.com/v2/decks/all/${deckId}`);
             const data = await resp.json();
             
-            // 1. Carica il Comandante
+            // Carica Comandante
             if (data.commanders) {
                 const cmdBox = document.getElementById('commander-box');
                 Object.values(data.commanders).forEach(card => {
-                    const img = createCardUI(card, 'commander');
-                    cmdBox.appendChild(img);
+                    cmdBox.appendChild(createCardUI(card.card, 'commander'));
                 });
             }
 
-            // 2. Popola il Mazzo
+            // Popola Mazzo
             library = [];
-            for (const [name, cardData] of Object.entries(data.mainboard)) {
+            Object.values(data.mainboard).forEach(cardData => {
                 for (let i = 0; i < cardData.quantity; i++) {
                     library.push(cardData.card);
                 }
-            }
+            });
             
-            shuffleDeck(false); // Mescola senza alert all'inizio
+            shuffleArray(library);
+            updateLibraryUI();
             
-            // 3. Pesca le 7 carte iniziali
+            // Pesca 7 iniziali
             for(let i=0; i<7; i++) {
                 if(library.length > 0) hand.push(library.pop());
             }
             updateHandUI();
+            updateLibraryUI();
 
         } catch (e) {
-            console.error("Errore caricamento:", e);
+            console.error("Errore:", e);
         }
     }
 
     function createCardUI(cardData, context) {
         const img = document.createElement('img');
-        // Usa l'immagine scryfall diretta
         const scryId = cardData.scryfall_id;
-        img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
-        img.className = 'card-img';
+        // Immagine retro se è nel mazzo, altrimenti fronte
+        img.src = (context === 'library') 
+            ? "https://deckmaster.info/images/cards/back.png" 
+            : `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
         
-        // Se è in mano, clicca per giocare nella zona corretta
-        if (context === 'hand') {
-            img.onclick = () => playCard(cardData);
-        }
+        img.className = 'card-img';
+        if (context === 'hand') img.onclick = () => playCard(cardData);
         return img;
     }
 
-    function playCard(cardData) {
-        // Rimuovi dalla mano
-        hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id || hand.indexOf(c) !== hand.indexOf(cardData));
-        updateHandUI();
-
-        // Determina zona
-        let zoneId = 'zone-others';
-        if (cardData.type_line.toLowerCase().includes('land')) zoneId = 'zone-lands';
-        else if (cardData.type_line.toLowerCase().includes('creature')) zoneId = 'zone-creatures';
-
-        const zone = document.getElementById(zoneId);
-        zone.appendChild(createCardUI(cardData, 'field'));
+    function animateShuffle() {
+        const libZone = document.getElementById('library-zone');
+        libZone.classList.add('shuffling');
+        
+        setTimeout(() => {
+            shuffleArray(library);
+            libZone.classList.remove('shuffling');
+        }, 1000);
     }
 
-    function shuffleDeck(showAlert = true) {
-        for (let i = library.length - 1; i > 0; i--) {
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [library[i], library[j]] = [library[j], library[i]];
+            [array[i], array[j]] = [array[j], array[i]];
         }
-        if(showAlert) alert("Mazzo Mescolato!");
     }
 
     function drawCard() {
         if (library.length === 0) return;
         hand.push(library.pop());
         updateHandUI();
+        updateLibraryUI();
     }
 
     function updateHandUI() {
-        const handDiv = document.getElementById('hand-zone');
+        const handDiv = document.querySelector('[data-label="LA TUA MANO"]');
         handDiv.innerHTML = '';
-        hand.forEach(card => {
-            handDiv.appendChild(createCardUI(card, 'hand'));
-        });
+        hand.forEach(card => handDiv.appendChild(createCardUI(card, 'hand')));
+    }
+
+    function updateLibraryUI() {
+        const libDiv = document.getElementById('library-zone');
+        libDiv.innerHTML = '';
+        if (library.length > 0) {
+            libDiv.appendChild(createCardUI(library[library.length-1], 'library'));
+        }
+    }
+
+    function playCard(cardData) {
+        hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id || hand.indexOf(c) !== hand.indexOf(cardData));
+        updateHandUI();
+
+        let zoneId = 'zone-others';
+        if (cardData.type_line.toLowerCase().includes('land')) zoneId = 'zone-lands';
+        else if (cardData.type_line.toLowerCase().includes('creature')) zoneId = 'zone-creatures';
+
+        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
     }
 
     function updateLife(amt) {
