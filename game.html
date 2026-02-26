@@ -215,39 +215,37 @@
         updateUI();
     }
 
-    function playCard(cardData, from) {
-        // 1. Rimuoviamo prima la carta dalla logica (array hand)
-        if (from === 'hand') {
-            hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+   // Modifica la funzione playCard per includere il controllo mana anche per il Comandante
+function playCard(cardData, from) {
+    const type = (cardData.type_line || "").toLowerCase();
+    const isLand = type.includes('land');
+    
+    // Se non è una terra, controlliamo se possiamo pagarla (sia da mano che da zona Comandante)
+    if (!isLand) {
+        const canAfford = autoTapForCard(cardData);
+        if (!canAfford) {
+            showManaError(); // Quel popup rosso che vedi nello screenshot!
+            return;
         }
-
-        // 2. Troviamo la zona giusta
-        const type = (cardData.type_line || "").toLowerCase();
-        let zoneId;
-        
-        if (type.includes('land')) {
-            zoneId = 'field-lands';
-        } else if (type.includes('creature')) {
-            zoneId = 'field-creatures';
-        } else {
-            zoneId = 'field-others';
-        }
-
-        // 3. Rimuoviamo l'elemento visivo vecchio per evitare duplicati o "sparizioni"
-        document.querySelectorAll('.card').forEach(c => {
-            const data = JSON.parse(c.dataset.cardData || "{}");
-            if(data.scryfall_id === cardData.scryfall_id && c.parentElement.id === from) {
-                c.remove();
-            }
-        });
-
-        // 4. Aggiungiamo la carta alla zona di destinazione
-        const newCard = createCardUI(cardData, 'field');
-        document.getElementById(zoneId).appendChild(newCard);
-
-        // 5. Aggiorniamo la mano visiva
-        updateUI();
     }
+
+    // Logica di rimozione corretta
+    if (from === 'hand') {
+        hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+    } else if (from === 'commander') {
+        // Opzionale: qui potresti aggiungere la logica per la "Commander Tax"
+        console.log("Comandante giocato dalla zona di comando");
+    }
+
+    // ... resto della funzione per spostare la carta in campo
+    const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
+    
+    // Pulizia e aggiunta al campo
+    const newCard = createCardUI(cardData, 'field');
+    document.getElementById(zoneId).appendChild(newCard);
+    
+    updateUI();
+}
 
     function removeFromAll(cardData) {
         hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
