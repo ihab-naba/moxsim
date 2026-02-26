@@ -65,47 +65,47 @@
     // Carica i mazzi dal salvataggio locale all'avvio
     window.onload = displayDecks;
 
-    function saveDeck() {
-        const url = document.getElementById('deckUrl').value;
-        const name = document.getElementById('deckName').value || "Mazzo senza nome";
-        
-        if (!url.includes("moxfield.com")) {
-            alert("Per favore, inserisci un link valido di Moxfield.");
-            return;
-        }
-
-        const newDeck = { id: Date.now(), name, url };
-        let decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
-        decks.push(newDeck);
-        localStorage.setItem('moxDecks', JSON.stringify(decks));
-        
-        // Pulizia input e aggiornamento lista
-        document.getElementById('deckUrl').value = '';
-        document.getElementById('deckName').value = '';
-        displayDecks();
-        
-        // Qui potresti reindirizzare alla pagina di gioco:
-        // window.location.href = `game.html?deck=${encodeURIComponent(url)}`;
+   function saveDeck() {
+    const url = document.getElementById('deckUrl').value;
+    const name = document.getElementById('deckName').value || "Mazzo senza nome";
+    
+    if (!url.includes("moxfield.com")) {
+        alert("Inserisci un link Moxfield valido!");
+        return;
     }
 
-    function displayDecks() {
-        const container = document.getElementById('deckLibrary');
-        const decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
-        
-        container.innerHTML = decks.length ? '' : '<p style="grid-column: span 3; color: #444;">Nessun mazzo salvato. Comincia ora!</p>';
-        
-        decks.forEach(deck => {
-            const div = document.createElement('div');
-            div.className = 'deck-card';
-            div.onclick = () => window.location.href = `game.html?deck=${encodeURIComponent(deck.url)}`;
-            div.innerHTML = `
-                <div class="delete-btn" onclick="event.stopPropagation(); deleteDeck(${deck.id})">Rimuovi</div>
-                <h3>${deck.name}</h3>
-                <span>Moxfield Deck</span>
-            `;
-            container.appendChild(div);
-        });
-    }
+    const newDeck = { id: Date.now(), name, url };
+    let decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
+    decks.push(newDeck);
+    localStorage.setItem('moxDecks', JSON.stringify(decks));
+    
+    // AGGIORNAMENTO: Dopo il salvataggio, vai subito al gioco
+    window.location.href = `game.html?deck=${encodeURIComponent(url)}`;
+}
+
+// Assicurati che anche i mazzi già salvati nella lista abbiano il link cliccabile
+function displayDecks() {
+    const container = document.getElementById('deckLibrary');
+    const decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
+    
+    container.innerHTML = decks.length ? '' : '<p>Nessun mazzo salvato.</p>';
+    
+    decks.forEach(deck => {
+        const div = document.createElement('div');
+        div.className = 'deck-card';
+        // Quando clicchi su un mazzo vecchio, ti manda a game.html
+        div.onclick = () => {
+            window.location.href = `game.html?deck=${encodeURIComponent(deck.url)}`;
+        };
+        div.innerHTML = `
+            <div class="delete-btn" onclick="event.stopPropagation(); deleteDeck(${deck.id})">Rimuovi</div>
+            <h3>${deck.name}</h3>
+            <span>Moxfield Deck</span>
+        `;
+        container.appendChild(div);
+    });
+}
+       
 
     function deleteDeck(id) {
         let decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
