@@ -9,8 +9,8 @@
         :root {
             --player-aura: #007bff;
             --mox-purple: #7d5bbe;
-            --bg-dark: #0a0a0a;
-            --zone-bg: rgba(255, 255, 255, 0.02);
+            --bg-dark: #000000; /* Nero assoluto come da screenshot */
+            --zone-bg: #0a0a0a;
         }
 
         body { 
@@ -21,213 +21,163 @@
 
         #arena {
             display: grid;
-            grid-template-columns: 1fr 300px; /* Campo da gioco e sidebar */
+            grid-template-columns: 1fr 300px;
             height: 100vh;
         }
 
-        /* --- CAMPO DA GIOCO PRINCIPALE --- */
+        /* --- CAMPO DA GIOCO --- */
         #main-battlefield {
             display: flex;
             flex-direction: column;
-            flex: 1;
-            padding: 15px;
-            gap: 15px;
-            background: radial-gradient(circle at center, #151515 0%, #0a0a0a 100%);
+            padding: 10px;
+            gap: 8px;
         }
 
-        /* Contenitore per le zone superiori impilate */
-        #battlefield-stack {
+        /* Zone superiori impilate */
+        .zone-stack {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            flex-grow: 1; /* Prende tutto lo spazio superiore */
+            gap: 8px;
+            flex: 1;
         }
 
         .zone {
-            flex-grow: 1;
+            flex: 1;
             background: var(--zone-bg);
-            border: 1px solid #222;
-            border-bottom: 2px solid var(--player-aura); /* Aura blu inferiore */
+            border: 1px solid var(--player-aura); /* Bordo blu sottile su tutto il perimetro */
             border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             position: relative;
-            min-height: 150px;
         }
 
-        /* --- ETICHETTE ZONE (In alto a sinistra, come nel mock-up) --- */
-        .zone::after {
+        /* Etichette zone (Alto a sinistra) */
+        .zone::before, .sub-zone::before {
             content: attr(data-label);
             position: absolute;
+            top: 10px;
+            left: 12px;
             font-size: 10px;
-            color: #444;
-            letter-spacing: 2px;
-            top: 10px; /* Posizione in alto */
-            left: 15px; /* Posizione a sinistra */
-            text-transform: uppercase;
-        }
-
-        /* --- ZONA INFERIORE SUDDIVISA (Come Screenshot 17.33.33) --- */
-        #lower-zones {
-            height: 150px; /* Altezza fissa per questa sezione */
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        /* La zona "La Tua Mano" è più larga */
-        #hand-sub-zone {
-            flex: 3;
-            background: rgba(0,0,0,0.8);
-            border: 1px solid #333;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        /* Le altre zone più piccole e impilate */
-        #game-sub-zones {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .mini-zone {
-            flex: 1;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid #222;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        /* Etichette per le mini-zone */
-        .mini-zone::after, #hand-sub-zone::after {
-            content: attr(data-label);
-            position: absolute;
-            font-size: 9px;
-            color: #444;
-            top: 8px;
-            left: 10px;
+            color: #888;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* --- SIDEBAR CONTROLLI --- */
+        /* --- ZONA INFERIORE (Mano + Mazzo/Cimitero/Esilio) --- */
+        #bottom-bar {
+            display: flex;
+            height: 180px;
+            gap: 8px;
+        }
+
+        #hand-zone {
+            flex: 2.5;
+            background: var(--zone-bg);
+            border: 1px solid var(--player-aura);
+            border-radius: 12px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #right-stack {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+
+        .sub-zone {
+            flex: 1;
+            background: var(--zone-bg);
+            border: 1px solid var(--player-aura);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        /* --- SIDEBAR --- */
         .sidebar {
-            background: #0f0f0f;
+            background: #0a0a0a;
             border-left: 1px solid #222;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
         .life-box {
             background: #000;
-            padding: 15px;
+            padding: 20px;
             border-radius: 15px;
             text-align: center;
             border: 1px solid #333;
         }
 
-        .life-total { font-size: 42px; font-weight: 900; color: var(--player-aura); display: block; }
+        .life-total { font-size: 50px; font-weight: 900; color: var(--player-aura); display: block; }
 
-        .btn-group { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
         .btn-circle { 
-            background: #222; border: none; color: white; width: 35px; height: 35px; 
-            border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 20px;
+            background: #222; border: none; color: white; width: 40px; height: 40px; 
+            border-radius: 50%; cursor: pointer; font-size: 20px;
         }
 
         .btn-action {
             background: var(--mox-purple);
-            color: white; border: none; padding: 12px;
+            color: white; border: none; padding: 15px;
             border-radius: 8px; font-weight: bold; cursor: pointer;
-            transition: 0.2s;
             text-transform: uppercase;
         }
-        .btn-action:hover { filter: brightness(1.2); }
 
-        .hidden { display: none !important; }
+        #preview-area {
+            margin-top: auto;
+            height: 200px;
+            border: 1px dashed #333;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #444;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
     </style>
 </head>
-<body id="main-body">
+<body>
 
 <div id="arena">
     <div id="main-battlefield">
-        
-        <div id="battlefield-stack">
+        <div class="zone-stack">
             <div class="zone" data-label="CREATURES"></div>
             <div class="zone" data-label="OTHERS"></div>
             <div class="zone" data-label="LAND"></div>
         </div>
 
-        <div id="lower-zones">
-            <div id="hand-sub-zone" data-label="LA TUA MANO">
-                <div id="hand-cards" style="display:flex; gap:10px;">
-                    </div>
-            </div>
-            
-            <div id="game-sub-zones">
-                <div class="mini-zone" data-label="MAZZO"></div>
-                <div class="mini-zone" data-label="CIMITERO"></div>
-                <div class="mini-zone" data-label="ESILIO"></div>
+        <div id="bottom-bar">
+            <div id="hand-zone" data-label="LA TUA MANO"></div>
+            <div id="right-stack">
+                <div class="sub-zone" data-label="MAZZO"></div>
+                <div class="sub-zone" data-label="CIMITERO"></div>
+                <div class="sub-zone" data-label="ESILIO"></div>
             </div>
         </div>
     </div>
 
     <div class="sidebar">
-        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; text-align:left;">← ESCI DALL'ARENA</button>
+        <div style="color: #444; font-size: 11px; text-align: right; cursor: pointer;" onclick="window.location.href='index.html'">← ESCI DALL'ARENA</div>
         
         <div class="life-box">
             <small style="color:#555">PLAYER LIFE</small>
-            <span id="p-life-val" class="life-total">40</span>
+            <span class="life-total">40</span>
             <div class="btn-group">
-                <button class="btn-circle" onclick="updateLife('p', -1)">-</button>
-                <button class="btn-circle" onclick="updateLife('p', 1)">+</button>
+                <button class="btn-circle">-</button>
+                <button class="btn-circle">+</button>
             </div>
         </div>
 
-        <button class="btn-action" onclick="drawCard()">PESCA CARTA</button>
-        <button class="btn-action" style="background:#333" onclick="location.reload()">RIAVVIA MATCH</button>
+        <button class="btn-action">PESCA CARTA</button>
+        <button class="btn-action" style="background: #333;">RIAVVIA MATCH</button>
 
-        <div id="preview-container" style="margin-top:auto; background:#000; height: 180px; border-radius:10px; border:1px dashed #333; display:flex; align-items:center; justify-content:center; flex-direction:column;">
-            <span style="color:#333; font-size: 12px;">CARD PREVIEW</span>
-        </div>
+        <div id="preview-area">Card Preview</div>
     </div>
 </div>
-
-<script>
-    const params = new URLSearchParams(window.location.search);
-    const mode = params.get('mode') || 'goldfish';
-    // Ignoriamo temporaneamente la modalità 'ai' dato che abbiamo rimosso le zone AI
-    document.getElementById('main-body').className = `mode-${mode}`;
-
-    // Gestione Vite
-    let pLife = 40;
-    function updateLife(who, amt) {
-        pLife += amt;
-        document.getElementById('p-life-val').innerText = pLife;
-    }
-
-    function drawCard() {
-        // Logica futura per pescare
-        const hand = document.getElementById('hand-cards');
-        const cardPlaceholder = document.createElement('div');
-        cardPlaceholder.style.width = "60px";
-        cardPlaceholder.style.height = "85px";
-        cardPlaceholder.style.background = "#222";
-        cardPlaceholder.style.borderRadius = "4px";
-        cardPlaceholder.style.border = "1px solid #444";
-        hand.appendChild(cardPlaceholder);
-    }
-</script>
 
 </body>
 </html>
