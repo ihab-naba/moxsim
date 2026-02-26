@@ -3,75 +3,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoxSim Arena - Battle Table</title>
+    <title>MoxSim Arena - Goldfish Table</title>
     
     <style>
         :root {
-            --player-aura: #007bff;
-            --mox-purple: #7d5bbe;
-            --bg-dark: #000000; /* Nero assoluto come da screenshot */
-            --zone-bg: #0a0a0a;
+            /* Colori esatti dallo screenshot */
+            --bg-dark: #000000;          /* Nero assoluto dello sfondo */
+            --zone-bg: #0a0a0a;          /* Grigio scuro delle zone */
+            --aura-blue: #007bff;        /* Blu acceso dei bordi */
+            --btn-purple: #9a73ef;       /* Viola chiaro dei pulsanti */
+            --btn-text: #ffffff;         /* Testo bianco dei pulsanti */
+            --btn-red: #d11326;          /* Rosso acceso del Next Turn */
+            
+            /* Font (Inter è un ottimo sostituto gratuito di San Francisco) */
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
         }
 
         body { 
-            margin: 0; font-family: 'Inter', sans-serif; 
-            background: var(--bg-dark); color: white; 
+            margin: 0; font-family: var(--font-main); 
+            background: var(--bg-dark); color: #ffffff; 
             height: 100vh; overflow: hidden; 
         }
 
-        #arena {
+        /* --- LAYOUT A COLONNE --- */
+        #arena-container {
             display: grid;
-            grid-template-columns: 1fr 300px;
+            grid-template-columns: 1fr 280px; /* Campo da gioco e sidebar fissa */
             height: 100vh;
         }
 
-        /* --- CAMPO DA GIOCO --- */
-        #main-battlefield {
+        /* --- CAMPO DA GIOCO (SINISTRA) --- */
+        #game-field {
             display: flex;
             flex-direction: column;
             padding: 10px;
-            gap: 8px;
+            gap: 10px;
+            overflow: hidden;
         }
 
-        /* Zone superiori impilate */
-        .zone-stack {
+        /* Stack delle zone superiori */
+        .zones-upper {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            flex: 1;
+            gap: 10px;
+            flex-grow: 1;
         }
 
-        .zone {
-            flex: 1;
+        .battle-zone {
+            flex-grow: 1;
             background: var(--zone-bg);
-            border: 1px solid var(--player-aura); /* Bordo blu sottile su tutto il perimetro */
+            border: 1px solid var(--aura-blue); /* Bordo blu su tutti i lati */
             border-radius: 12px;
             position: relative;
+            min-height: 160px; /* Per mantenere proporzioni */
         }
 
-        /* Etichette zone (Alto a sinistra) */
-        .zone::before, .sub-zone::before {
+        /* Etichette zone (Esatte come nello screenshot) */
+        .battle-zone::before, .sub-zone::before {
             content: attr(data-label);
             position: absolute;
             top: 10px;
-            left: 12px;
+            left: 15px;
             font-size: 10px;
             color: #888;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
+            font-weight: 500;
         }
 
-        /* --- ZONA INFERIORE (Mano + Mazzo/Cimitero/Esilio) --- */
-        #bottom-bar {
+        /* Barra Inferiore Suddivisa */
+        #zones-lower {
+            height: 200px;
             display: flex;
-            height: 180px;
-            gap: 8px;
+            gap: 10px;
         }
 
-        #hand-zone {
-            flex: 2.5;
-            background: var(--zone-bg);
-            border: 1px solid var(--player-aura);
+        #hand-zone-container {
+            flex: 3; /* Molto più largo */
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--aura-blue);
             border-radius: 12px;
             position: relative;
             display: flex;
@@ -79,80 +89,126 @@
             justify-content: center;
         }
 
-        #right-stack {
-            flex: 1;
+        #right-sub-stack {
+            flex: 1; /* Sottile e verticale */
             display: flex;
+            flex-direction: column;
             gap: 8px;
         }
 
         .sub-zone {
             flex: 1;
             background: var(--zone-bg);
-            border: 1px solid var(--player-aura);
+            border: 1px solid var(--aura-blue);
             border-radius: 12px;
             position: relative;
         }
 
-        /* --- SIDEBAR --- */
+        /* --- SIDEBAR CONTROLLI (DESTRA) --- */
         .sidebar {
-            background: #0a0a0a;
-            border-left: 1px solid #222;
+            background: #000000;
+            border-left: 1px solid #111;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            overflow-y: auto;
         }
 
-        .life-box {
-            background: #000;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            border: 1px solid #333;
-        }
-
-        .life-total { font-size: 50px; font-weight: 900; color: var(--player-aura); display: block; }
-
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-circle { 
-            background: #222; border: none; color: white; width: 40px; height: 40px; 
-            border-radius: 50%; cursor: pointer; font-size: 20px;
-        }
-
-        .btn-action {
-            background: var(--mox-purple);
-            color: white; border: none; padding: 15px;
-            border-radius: 8px; font-weight: bold; cursor: pointer;
+        /* Link d'uscita */
+        .exit-arena {
+            color: #888;
+            text-decoration: none;
+            font-size: 11px;
+            text-align: right;
+            cursor: pointer;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        .exit-arena:hover { color: white; }
+
+        /* Box Vite */
+        .life-counter {
+            background: #0a0a0a;
+            padding: 25px;
+            border-radius: 18px;
+            text-align: center;
+            border: 1px solid #222;
+        }
+        .life-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .life-value { font-size: 58px; font-weight: 900; color: #fff; display: block; line-height: 1; }
+
+        .btn-plus-minus-group { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .btn-math { 
+            background: #222; border: none; color: white; width: 45px; height: 45px; 
+            border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 24px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-math:hover { background: #333; }
+
+        /* --- STILE PULSANTI MOXFIELD (VIOLA CON EFFETTO BOMBATO) --- */
+        .mox-btn {
+            background: linear-gradient(180deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 100%), var(--btn-purple);
+            box-shadow: 0px 2px 4px rgba(0,0,0,0.5);
+            border: none;
+            color: var(--btn-text);
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.1s;
+            text-transform: capitalize;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .mox-btn:hover { filter: brightness(1.1); }
+        .mox-btn:active { transform: translateY(1px); box-shadow: 0px 1px 2px rgba(0,0,0,0.5); }
+        .mox-btn .arrow-down { font-size: 10px; margin-top: 2px; }
+
+        /* Pulsante Rosso Next Turn */
+        .btn-red {
+            background: linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%), var(--btn-red);
         }
 
-        #preview-area {
+        /* Controlli inferiori */
+        .btn-controls { display: flex; flex-direction: column; gap: 10px; margin-top: auto; }
+
+        /* Box Commander (Bordo tratteggiato) */
+        .commander-zone {
             margin-top: auto;
-            height: 200px;
-            border: 1px dashed #333;
+            height: 180px;
+            border: 2px dashed #222;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #444;
-            font-size: 12px;
-            text-transform: uppercase;
+            position: relative;
         }
     </style>
 </head>
 <body>
 
-<div id="arena">
-    <div id="main-battlefield">
-        <div class="zone-stack">
-            <div class="zone" data-label="CREATURES"></div>
-            <div class="zone" data-label="OTHERS"></div>
-            <div class="zone" data-label="LAND"></div>
+<div id="arena-container">
+    
+    <div id="game-field">
+        
+        <div class="zones-upper">
+            <div class="battle-zone" data-label="CREATURES"></div>
+            <div class="battle-zone" data-label="OTHERS"></div>
+            <div class="battle-zone" data-label="LAND"></div>
         </div>
 
-        <div id="bottom-bar">
-            <div id="hand-zone" data-label="LA TUA MANO"></div>
-            <div id="right-stack">
+        <div id="zones-lower">
+            <div id="hand-zone-container" data-label="LA TUA MANO">
+                <div id="hand-cards">
+                    </div>
+            </div>
+            
+            <div id="right-sub-stack">
                 <div class="sub-zone" data-label="MAZZO"></div>
                 <div class="sub-zone" data-label="CIMITERO"></div>
                 <div class="sub-zone" data-label="ESILIO"></div>
@@ -161,23 +217,48 @@
     </div>
 
     <div class="sidebar">
-        <div style="color: #444; font-size: 11px; text-align: right; cursor: pointer;" onclick="window.location.href='index.html'">← ESCI DALL'ARENA</div>
+        <a href="index.html" class="exit-arena">← ESCI DALL'ARENA</a>
         
-        <div class="life-box">
-            <small style="color:#555">PLAYER LIFE</small>
-            <span class="life-total">40</span>
-            <div class="btn-group">
-                <button class="btn-circle">-</button>
-                <button class="btn-circle">+</button>
+        <div class="life-counter">
+            <span class="life-label">PLAYER LIFE</span>
+            <span id="player-life-val" class="life-value">40</span>
+            <div class="btn-plus-minus-group">
+                <button class="btn-math" onclick="adjustLife(-1)">-</button>
+                <button class="btn-math" onclick="adjustLife(1)">+</button>
             </div>
         </div>
 
-        <button class="btn-action">PESCA CARTA</button>
-        <button class="btn-action" style="background: #333;">RIAVVIA MATCH</button>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="mox-btn">Player <span class="arrow-down">▼</span></button>
+            <button class="mox-btn">Sleeves <span class="arrow-down">▼</span></button>
+            <button class="mox-btn" onclick="location.reload()">Restart</button>
+            <button class="mox-btn">Add Token <span class="arrow-down">▼</span></button>
+            <button class="mox-btn">Shuffle</button>
+            <button class="mox-btn">View Library</button>
+            <button class="mox-btn">Draw</button>
+        </div>
 
-        <div id="preview-area">Card Preview</div>
+        <button class="mox-btn btn-red">Next Turn</button>
+        
+        <div class="commander-zone" data-label="COMMANDER">
+            <span style="color:#222; font-size:12px; font-weight:900; letter-spacing:1px; position:absolute; top:12px; left:12px; text-transform:uppercase;">COMMANDER</span>
+        </div>
     </div>
 </div>
+
+<script>
+    // Recupera vite da LocalStorage se presenti, altrimenti 40
+    let currentLife = localStorage.getItem('moxsim_life') ? parseInt(localStorage.getItem('moxsim_life')) : 40;
+    document.getElementById('player-life-val').innerText = currentLife;
+
+    function adjustLife(amount) {
+        currentLife += amount;
+        if (currentLife < 0) currentLife = 0;
+        document.getElementById('player-life-val').innerText = currentLife;
+        // Salva lo stato
+        localStorage.setItem('moxsim_life', currentLife);
+    }
+</script>
 
 </body>
 </html>
