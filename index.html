@@ -72,6 +72,45 @@
         input { flex: 1; background: #000; border: 1px solid #333; color: white; padding: 12px 15px; border-radius: 8px; outline: none; }
         .btn-main { background: var(--accent); color: white; border: none; padding: 0 25px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
+        /* PREVIEW AREA */
+        #deck-preview-container {
+            max-width: 800px;
+            margin: 20px auto 0;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            border: 1px solid #333;
+            display: none;
+            overflow: hidden;
+            animation: fadeIn 0.4s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .preview-header {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+        }
+        .preview-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 20px;
+            padding: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .preview-item {
+            font-size: 13px;
+            color: #ccc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+        }
+        .preview-item b { color: var(--accent); margin-right: 6px; }
+
         /* MODALE STYLES */
         .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); }
         .modal-content { 
@@ -96,6 +135,10 @@
         .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-top: 20px; }
         .deck-card { background: #181818; border: 1px solid #282828; padding: 20px; border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .deck-card:hover { border-color: var(--accent); background: #222; }
+
+        /* Scrollbar Style */
+        .preview-list::-webkit-scrollbar { width: 6px; }
+        .preview-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -124,10 +167,20 @@
 <div class="hero">
     <h1>PROVA QUI IL TUO COMMANDER</h1>
     <p style="color:var(--text-dim)">Simulatore di gioco per mazzi Moxfield.</p>
+    
     <div class="input-container">
-        <input type="text" id="deckUrl" placeholder="Incolla link Moxfield...">
+        <input type="text" id="deckUrl" placeholder="Incolla link Moxfield..." oninput="fetchPreview()">
         <input type="text" id="deckName" placeholder="Nome Mazzo" style="max-width: 150px;">
         <button class="btn-main" onclick="handleSaveDeck()">SALVA E GIOCA</button>
+    </div>
+
+    <div id="deck-preview-container">
+        <div class="preview-header">
+            <span id="preview-deck-name">Preview Mazzo</span>
+            <span id="preview-card-count" style="color: var(--accent);">0 Carte</span>
+        </div>
+        <div class="preview-list" id="preview-list">
+            </div>
     </div>
 </div>
 
@@ -168,6 +221,7 @@
 </div>
 
 <script>
+    // --- Configurazione Firebase ---
     const firebaseConfig = {
         apiKey: "AIzaSyBoE1GSQ4mYeXLRdU5loogsebJ96yKXKAw",
         authDomain: "moxsim.firebaseapp.com",
@@ -183,7 +237,53 @@
 
     let tempDeckUrl = ""; 
 
-    // GESTIONE FINESTRE
+    // --- Gestione Preview ---
+    async function fetchPreview() {
+        const url = document.getElementById('deckUrl').value;
+        const deckId = url.match(/\/decks\/([^?\/]+)/)?.[1];
+        const container = document.getElementById('deck-preview-container');
+        const listDiv = document.getElementById('preview-list');
+
+        if (!deckId) { container.style.display = 'none'; return; }
+
+        try {
+            const proxy = "https://api.allorigins.win/get?url=";
+            const target = encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`);
+            const response = await fetch(proxy + target);
+            const json = await response.json();
+            const data = JSON.parse(json.contents);
+
+            // Auto-compila nome mazzo se vuoto
+            if (!document.getElementById('deckName').value) {
+                document.getElementById('deckName').value = data.name;
+            }
+            document.getElementById('preview-deck-name').innerText = data.name;
+
+            let html = "";
+            let count = 0;
+
+            if (data.commanders) {
+                Object.values(data.commanders).forEach(c => {
+                    html += `<div class="preview-item">👑 <b>1</b> ${c.card.name}</div>`;
+                    count++;
+                });
+            }
+            if (data.mainboard) {
+                Object.values(data.mainboard).forEach(info => {
+                    html += `<div class="preview-item"><b>${info.quantity}</b> ${info.card.name}</div>`;
+                    count += info.quantity;
+                });
+            }
+
+            listDiv.innerHTML = html;
+            document.getElementById('preview-card-count').innerText = count + " Carte";
+            container.style.display = 'block';
+        } catch (e) {
+            console.error("Errore preview", e);
+        }
+    }
+
+    // --- Gestione Finestre ---
     function openAuth() { document.getElementById('auth-modal').style.display = 'block'; }
     function closeAuth() { document.getElementById('auth-modal').style.display = 'none'; }
     function closeOpponent() { document.getElementById('opponent-modal').style.display = 'none'; }
@@ -213,7 +313,7 @@
         closeAuth();
     }
 
-    // NUOVA LOGICA DI SALVATAGGIO + SCELTA
+    // --- Salvataggio e Battle ---
     async function handleSaveDeck() {
         const url = document.getElementById('deckUrl').value;
         const name = document.getElementById('deckName').value || "Nuovo Mazzo";
@@ -226,7 +326,6 @@
             await db.collection("decks").add({ uid: auth.currentUser.uid, name, url, date: new Date() });
         }
         
-        // Invece di caricare, apri la scelta modalità
         document.getElementById('opponent-modal').style.display = 'block';
     }
 
@@ -238,6 +337,7 @@
         status.innerText = mode === 'ai' ? "Configurando l'AI avversaria..." : "Preparando il tavolo da allenamento...";
         
         setTimeout(() => {
+            // Reindirizza a game.html con i parametri necessari
             window.location.href = `game.html?deck=${encodeURIComponent(tempDeckUrl)}&mode=${mode}`;
         }, 2200);
     }
