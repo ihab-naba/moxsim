@@ -2,47 +2,48 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V11</title>
+    <title>MoxSim Arena - Goldfish V12</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #000; --panel: #0d0d0d; --gray: #888; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         
         #arena { display: grid; grid-template-columns: 1fr 300px; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
-        #board { display: flex; flex-direction: column; gap: 8px; }
+        #board { display: flex; flex-direction: column; gap: 8px; position: relative; }
         
         .zone { 
             background: var(--panel); border: 1px solid var(--mox-blue); border-radius: 12px; 
-            position: relative; display: flex; align-items: center; padding: 25px 10px 5px; gap: 15px; flex: 1;
+            position: relative; display: flex; align-items: center; padding: 25px 10px 5px; gap: 10px; flex: 1;
             min-height: 0; overflow-x: auto;
         }
         .zone::before { content: attr(data-label); position: absolute; top: 5px; left: 10px; font-size: 10px; color: var(--gray); font-weight: bold; }
 
-        #bottom-bar { display: flex; height: 180px; gap: 8px; flex-shrink: 0; }
+        #bottom-bar { display: flex; height: 150px; gap: 8px; flex-shrink: 0; }
         
-        /* HAND: Ora le carte possono uscire dal riquadro quando ingrandite */
-        #hand { flex: 2.5; justify-content: center; overflow: visible; z-index: 10; }
-        #hand .card { height: 155px; width: auto; margin-right: -45px; transition: 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28); position: relative; }
-        #hand .card:hover { transform: translateY(-80px) scale(1.6); z-index: 1000; margin-right: 20px; margin-left: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); }
+        /* HAND Ottimizzata */
+        #hand { flex: 2.5; justify-content: center; overflow: visible !important; z-index: 100; }
+        #hand .card { height: 110px; margin-right: -40px; transition: 0.25s ease; position: relative; }
+        #hand .card:hover { transform: translateY(-100px) scale(2.2); z-index: 1000; margin-right: 30px; margin-left: 30px; box-shadow: 0 15px 40px rgba(0,0,0,0.9); }
 
-        .small-zone { flex: 0.6; justify-content: center; overflow: hidden; }
+        .small-zone { flex: 0.6; justify-content: center; position: relative; }
         
-        .card { height: 130px; border-radius: 8px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.7); transition: 0.2s; }
-        .field-card:hover { filter: brightness(1.2); outline: 2px solid var(--mox-blue); }
+        /* CARTE SUL CAMPO */
+        .card { height: 120px; border-radius: 7px; cursor: pointer; flex-shrink: 0; box-shadow: 0 4px 8px rgba(0,0,0,0.5); transition: 0.2s; }
+        .field-card:hover { filter: brightness(1.2); box-shadow: 0 0 10px var(--mox-blue); }
         .tapped { transform: rotate(90deg); margin: 0 25px; filter: brightness(0.6) !important; }
 
-        .library-back { height: 130px; border-radius: 8px; border: 1px solid #333; }
-        .count-badge { position: absolute; bottom: 10px; right: 10px; background: #000; color: var(--mox-blue); padding: 2px 8px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 14px; }
+        /* LIBRARY */
+        .lib-img { height: 110px; border-radius: 7px; border: 1px solid #333; }
+        .count-badge { position: absolute; bottom: 8px; right: 8px; background: #000; color: var(--mox-blue); padding: 2px 6px; border: 1px solid var(--mox-blue); border-radius: 4px; font-weight: bold; font-size: 12px; }
 
         #sidebar { border: 1px solid var(--mox-blue); border-radius: 12px; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-        .life { font-size: 65px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; text-shadow: 0 0 15px rgba(0,123,255,0.5); }
+        .life { font-size: 60px; text-align: center; color: var(--mox-blue); font-weight: bold; margin: 0; }
         
-        .btn { background: #9a73ef; border: none; padding: 10px; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 13px; box-shadow: 0 4px #6a49ac; }
+        .btn { background: #9a73ef; border: none; padding: 10px; border-radius: 50px; color: white; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 4px #6a49ac; }
         .btn:active { box-shadow: 0 2px #6a49ac; transform: translateY(2px); }
         .btn-red { background: #d11326; box-shadow: 0 4px #820914; }
         
-        #commander-zone { margin-top: auto; height: 180px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
-        #commander-zone .card { height: 160px; transition: 0.2s; }
-        #commander-zone .card:hover { transform: scale(1.05); filter: brightness(1.2); }
+        #commander-zone { margin-top: auto; height: 150px; border: 1px solid var(--mox-blue); border-radius: 12px; display: flex; justify-content: center; align-items: center; position: relative; }
+        #commander-zone .card { height: 130px; }
     </style>
 </head>
 <body>
@@ -54,9 +55,9 @@
         <div class="zone" data-label="LANDS" id="field-lands"></div>
         <div id="bottom-bar">
             <div class="zone" data-label="HAND" id="hand"></div>
-            <div class="zone small-zone" data-label="MAZZO" id="library"></div>
-            <div class="zone small-zone" data-label="CIMITERO" id="graveyard"></div>
-            <div class="zone small-zone" data-label="ESILIO" id="exile"></div>
+            <div class="zone small-zone" data-label="LIBRARY" id="library"></div>
+            <div class="zone small-zone" data-label="GRAVEYARD" id="graveyard"></div>
+            <div class="zone small-zone" data-label="EXILE" id="exile"></div>
         </div>
     </div>
 
@@ -95,10 +96,7 @@
 
             if (data.commanders) {
                 const cz = document.getElementById('commander-zone');
-                Object.values(data.commanders).forEach(c => {
-                    const img = createCardUI(c.card, 'commander');
-                    cz.appendChild(img);
-                });
+                Object.values(data.commanders).forEach(c => cz.appendChild(createCardUI(c.card, 'commander')));
             }
 
             deck = [];
@@ -109,22 +107,40 @@
             shuffleArray(deck);
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
-        } catch (err) { console.error("Errore"); }
+        } catch (err) { alert("Errore connessione. Ricarica la pagina."); }
     }
 
     function createCardUI(cardData, location = 'hand') {
         const img = document.createElement('img');
-        img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
-        img.className = location === 'hand' || location === 'commander' ? 'card' : 'card field-card';
+        const scryId = cardData.scryfall_id;
         
-        img.onclick = () => {
+        // Setup Immagine (gestione bifronte)
+        img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
+        img.dataset.face = "front";
+        img.className = (location === 'hand' || location === 'commander') ? 'card' : 'card field-card';
+        
+        // Click Sinistro: Gioca o Tappa
+        img.onclick = (e) => {
             if (location === 'hand' || location === 'commander') {
                 playCard(cardData, location);
-                if (location === 'commander') img.remove(); // Rimuove dalla CZ quando giocato
+                if (location === 'commander') img.remove();
             } else {
                 img.classList.toggle('tapped');
             }
         };
+
+        // Click Destro: Gira la carta (Flip)
+        img.oncontextmenu = (e) => {
+            e.preventDefault();
+            if (img.dataset.face === "front") {
+                img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal&face=back`;
+                img.dataset.face = "back";
+            } else {
+                img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
+                img.dataset.face = "front";
+            }
+        };
+
         return img;
     }
 
@@ -133,35 +149,10 @@
             const idx = hand.findIndex(c => c.scryfall_id === cardData.scryfall_id);
             if (idx > -1) hand.splice(idx, 1);
         }
-        
         const type = (cardData.type_line || "").toLowerCase();
         let zoneId = type.includes('land') ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-        
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
         updateUI();
-    }
-
-    function untapAll() {
-        document.querySelectorAll('.card.tapped').forEach(card => card.classList.remove('tapped'));
-    }
-
-    function shuffleDeck() {
-        shuffleArray(deck);
-        alert("Mazzo Mescolato!");
-    }
-
-    function shuffleArray(arr) {
-        for (let i = arr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [arr[i], arr[j]] = [arr[j], arr[i]];
-        }
-    }
-
-    function drawCard() {
-        if (deck.length > 0) {
-            hand.push(deck.pop());
-            updateUI();
-        }
     }
 
     function updateUI() {
@@ -171,14 +162,20 @@
 
         const libDiv = document.getElementById('library');
         libDiv.innerHTML = deck.length > 0 ? 
-            `<img src="https://cards.scryfall.io/large/back.jpg" class="library-back">
+            `<img src="https://cards.scryfall.io/large/back.jpg" class="lib-img">
              <div class="count-badge">${deck.length}</div>` : '';
     }
 
-    function changeLife(v) {
-        life += v;
-        document.getElementById('life-display').innerText = life;
+    function untapAll() { document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); }
+    function shuffleDeck() { shuffleArray(deck); updateUI(); }
+    function shuffleArray(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
     }
+    function drawCard() { if (deck.length > 0) { hand.push(deck.pop()); updateUI(); } }
+    function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
 
     window.onload = init;
 </script>
