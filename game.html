@@ -27,59 +27,78 @@
             height: 100vh; padding: 10px; box-sizing: border-box; gap: 10px;
         }
 
-        #play-area { display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }
-
-        .main-zone {
-            flex: 1; background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue); border-radius: 12px;
-            position: relative; overflow-x: auto; display: flex; align-items: center; padding: 0 15px;
+        #play-area { 
+            display: flex; flex-direction: column; gap: 8px; height: 100%;
         }
 
-        #bottom-row { display: flex; height: 220px; gap: 10px; }
+        /* Proporzioni Zone Superiori */
+        .main-zone {
+            flex: 1.2; /* Leggermente più grandi */
+            background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 12px;
+            position: relative; display: flex; align-items: center; 
+            padding: 20px 15px 5px 15px; gap: 8px; overflow-x: auto;
+        }
+
+        /* Proporzioni Barra Inferiore (Fissa per non rompere il layout) */
+        #bottom-row { 
+            height: 180px; display: flex; gap: 8px; margin-top: 5px;
+        }
 
         #hand-zone {
-            flex: 2; background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue); border-radius: 4px;
+            flex: 2.5; background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 8px;
             position: relative; display: flex; align-items: center; 
-            padding: 0 10px; gap: 5px; overflow-x: auto;
+            padding: 0 10px; gap: -20px; /* Carte leggermente sovrapposte */
+            overflow-x: auto;
         }
 
         .mini-zone {
-            flex: 1; background-color: var(--zone-bg);
-            border: 1px solid var(--mox-blue); border-radius: 4px;
+            flex: 0.6; background-color: var(--zone-bg);
+            border: 1px solid var(--mox-blue); border-radius: 8px;
             position: relative; display: flex; align-items: center; justify-content: center;
         }
 
-        .main-zone::before, #hand-zone::before, .mini-zone::before {
+        /* Label */
+        .main-zone::before, #hand-zone::before, .mini-zone::before, #commander-box::before {
             content: attr(data-label); position: absolute;
-            top: 8px; left: 10px; font-size: 10px;
+            top: 6px; left: 10px; font-size: 9px;
             color: var(--text-gray); text-transform: uppercase; font-weight: bold; z-index: 10;
         }
 
         /* Stile Carte */
         .card-img {
-            height: 160px; border-radius: 8px; cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            height: 140px; border-radius: 6px; cursor: pointer;
+            transition: transform 0.2s; box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            flex-shrink: 0;
         }
-        .card-img:hover { transform: scale(1.1); z-index: 100; box-shadow: 0 0 15px var(--mox-blue); }
+        .card-img:hover { transform: translateY(-10px) scale(1.05); z-index: 100; }
 
         /* Sidebar */
         #sidebar {
-            border: 1px solid var(--mox-blue); border-radius: 4px;
+            border: 1px solid var(--mox-blue); border-radius: 8px;
             display: flex; flex-direction: column; padding: 15px; gap: 10px;
         }
 
-        .life-display { font-size: 60px; font-weight: 900; color: var(--mox-blue); text-align: center; }
+        .life-display { font-size: 50px; font-weight: 900; color: var(--mox-blue); text-align: center; }
         
         .pill-btn {
             background: linear-gradient(180deg, #b598f3 0%, #7d5bbe 100%);
             border: 1px solid #6a49ac; border-radius: 50px; color: white;
-            padding: 8px; font-weight: bold; font-size: 13px; cursor: pointer;
+            padding: 10px; font-weight: bold; font-size: 13px; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         .pill-btn.red { background: linear-gradient(180deg, #e63946 0%, #a30b18 100%); border: 1px solid #820914; }
 
-        #commander-box { margin-top: auto; height: 180px; border: 1px solid var(--mox-blue); border-radius: 4px; position: relative; }
+        #commander-box { 
+            margin-top: auto; height: 180px; 
+            border: 1px solid var(--mox-blue); border-radius: 8px; 
+            position: relative; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Scrollbar sottile */
+        ::-webkit-scrollbar { height: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--mox-blue); border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -91,25 +110,26 @@
         <div class="main-zone" data-label="LAND" id="zone-lands"></div>
         
         <div id="bottom-row">
-            <div id="hand-zone" data-label="LA TUA MANO"></div>
-            <div class="mini-zone" data-label="MAZZO" id="zone-library"></div>
+            <div id="hand-zone" data-label="LA TUA MANO" id="hand-display"></div>
+            <div class="mini-zone" data-label="MAZZO" id="library-display">
+                <img src="https://deckmaster.info/images/cards/back.png" style="height:140px; border-radius:6px; opacity:0.5;">
+            </div>
             <div class="mini-zone" data-label="CIMITERO" id="zone-graveyard"></div>
             <div class="mini-zone" data-label="ESILIO" id="zone-exile"></div>
         </div>
     </div>
 
     <div id="sidebar">
-        <a href="index.html" style="color:white; text-decoration:none; font-size:12px; text-align:right;">← ESCI</a>
+        <div style="text-align:right; font-size:10px; cursor:pointer;" onclick="location.href='index.html'">← ESCI</div>
         <div class="life-display" id="life-val">40</div>
-        <div style="display:flex; justify-content:center; gap:10px;">
-            <button class="pill-btn" style="width:40px" onclick="updateLife(-1)">-</button>
-            <button class="pill-btn" style="width:40px" onclick="updateLife(1)">+</button>
+        <div style="display:flex; justify-content:center; gap:10px; margin-bottom:10px;">
+            <button class="pill-btn" style="width:45px" onclick="updateLife(-1)">-</button>
+            <button class="pill-btn" style="width:45px" onclick="updateLife(1)">+</button>
         </div>
 
-        <button class="pill-btn">Player ▾</button>
         <button class="pill-btn" onclick="shuffleDeck()">Shuffle</button>
         <button class="pill-btn" onclick="drawCard()">Draw</button>
-        <button class="pill-btn red">Next Turn</button>
+        <button class="pill-btn red" onclick="location.reload()">Restart</button>
 
         <div id="commander-box" data-label="COMMANDER"></div>
     </div>
@@ -120,60 +140,96 @@
     let hand = [];
     let life = 40;
 
-    // Carica il mazzo all'avvio
     async function init() {
         const params = new URLSearchParams(window.location.search);
-        const deckUrl = params.get('deck');
+        let deckUrl = params.get('deck');
         if (!deckUrl) return;
 
-        const deckId = deckUrl.split('/').pop().split('?')[0];
+        // Pulizia ID Moxfield
+        const parts = deckUrl.split('/');
+        const deckId = parts[parts.length - 1].split('?')[0];
         
         try {
             const resp = await fetch(`https://api.moxfield.com/v2/decks/all/${deckId}`);
             const data = await resp.json();
             
-            // Popoliamo la library con le immagini di Scryfall
+            // 1. Carica il Comandante
+            if (data.commanders) {
+                const cmdBox = document.getElementById('commander-box');
+                Object.values(data.commanders).forEach(card => {
+                    const img = createCardUI(card, 'commander');
+                    cmdBox.appendChild(img);
+                });
+            }
+
+            // 2. Popola il Mazzo
             library = [];
             for (const [name, cardData] of Object.entries(data.mainboard)) {
                 for (let i = 0; i < cardData.quantity; i++) {
-                    library.push({
-                        name: name,
-                        img: cardData.card.scryfall_uri 
-                            ? `https://api.scryfall.com/cards/${cardData.card.scryfall_id}?format=image`
-                            : 'https://i.imgur.com/7sC7Y77.png'
-                    });
+                    library.push(cardData.card);
                 }
             }
-            shuffleDeck();
+            
+            shuffleDeck(false); // Mescola senza alert all'inizio
+            
+            // 3. Pesca le 7 carte iniziali
+            for(let i=0; i<7; i++) {
+                if(library.length > 0) hand.push(library.pop());
+            }
+            updateHandUI();
+
         } catch (e) {
-            console.error(e);
+            console.error("Errore caricamento:", e);
         }
     }
 
-    function shuffleDeck() {
+    function createCardUI(cardData, context) {
+        const img = document.createElement('img');
+        // Usa l'immagine scryfall diretta
+        const scryId = cardData.scryfall_id;
+        img.src = `https://api.scryfall.com/cards/${scryId}?format=image&version=normal`;
+        img.className = 'card-img';
+        
+        // Se è in mano, clicca per giocare nella zona corretta
+        if (context === 'hand') {
+            img.onclick = () => playCard(cardData);
+        }
+        return img;
+    }
+
+    function playCard(cardData) {
+        // Rimuovi dalla mano
+        hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id || hand.indexOf(c) !== hand.indexOf(cardData));
+        updateHandUI();
+
+        // Determina zona
+        let zoneId = 'zone-others';
+        if (cardData.type_line.toLowerCase().includes('land')) zoneId = 'zone-lands';
+        else if (cardData.type_line.toLowerCase().includes('creature')) zoneId = 'zone-creatures';
+
+        const zone = document.getElementById(zoneId);
+        zone.appendChild(createCardUI(cardData, 'field'));
+    }
+
+    function shuffleDeck(showAlert = true) {
         for (let i = library.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [library[i], library[j]] = [library[j], library[i]];
         }
-        alert("Mazzo Mescolato!");
+        if(showAlert) alert("Mazzo Mescolato!");
     }
 
     function drawCard() {
         if (library.length === 0) return;
-        const card = library.pop();
-        hand.push(card);
+        hand.push(library.pop());
         updateHandUI();
     }
 
     function updateHandUI() {
-        const handDiv = document.querySelector('#hand-zone');
+        const handDiv = document.getElementById('hand-zone');
         handDiv.innerHTML = '';
         hand.forEach(card => {
-            const img = document.createElement('img');
-            img.src = card.img;
-            img.className = 'card-img';
-            img.onclick = () => playCard(card); // Esempio: clicca per giocare
-            handDiv.appendChild(img);
+            handDiv.appendChild(createCardUI(card, 'hand'));
         });
     }
 
