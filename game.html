@@ -147,6 +147,7 @@
         const type = (cardData.type_line || "").toLowerCase();
         const isLand = type.includes('land');
 
+        // 1. Controllo Mana e Auto-Tap
         if (!isLand) {
             const cost = calculateCMC(cardData.mana_cost);
             const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
@@ -154,15 +155,39 @@
                 const msg = document.getElementById('error-msg');
                 msg.style.display = 'block';
                 setTimeout(() => msg.style.display = 'none', 1500);
-                return;
+                return; // Blocca tutto se non hai mana
             }
-            for (let i = 0; i < cost; i++) { untappedLands[i].classList.add('tapped'); }
+            // Tappa le terre
+            for (let i = 0; i < cost; i++) { 
+                untappedLands[i].classList.add('tapped'); 
+            }
         }
 
-        removeFromAll(cardData, from);
+        // 2. RIMOZIONE LOGICA: Togliamo la carta dalla sorgente
+        if (from === 'hand') {
+            hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+        }
+        // Se viene dal comandante, non serve filtrarlo dall'array hand
+
+        // 3. RIMOZIONE VISIVA: Puliamo solo la carta cliccata nella zona d'origine
+        const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
+        document.querySelectorAll(selector).forEach(c => {
+            const data = JSON.parse(c.dataset.cardData || "{}");
+            if(data.scryfall_id === cardData.scryfall_id) {
+                c.remove();
+            }
+        });
+
+        // 4. POSIZIONAMENTO SUL CAMPO
         const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
-        updateUI();
+        const boardZone = document.getElementById(zoneId);
+        
+        // Creiamo la nuova carta per il campo (senza classe hand-card)
+        const newCard = createCardUI(cardData, 'field');
+        boardZone.appendChild(newCard);
+
+        // 5. REFRESH MANO
+        updateUI(); 
     }
 
     function removeFromAll(cardData, from) {
