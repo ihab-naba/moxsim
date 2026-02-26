@@ -15,32 +15,28 @@
         }
 
         body { 
-            margin: 0; 
-            font-family: 'Inter', sans-serif; 
-            background: var(--bg-dark); 
-            color: white; 
-            height: 100vh; 
-            overflow: hidden; 
+            margin: 0; font-family: 'Inter', sans-serif; 
+            background: var(--bg-dark); color: white; 
+            height: 100vh; overflow: hidden; 
         }
 
-        /* LAYOUT PRINCIPALE */
         #arena {
             display: grid;
-            grid-template-columns: 1fr 280px;
+            grid-template-columns: 1fr 300px;
             height: 100vh;
         }
 
-        /* TAVOLO DA GIOCO */
+        /* --- TAVOLO DA GIOCO --- */
         #table {
             display: flex;
             flex-direction: column;
-            padding: 10px;
-            gap: 10px;
+            padding: 15px;
+            gap: 15px;
             position: relative;
+            background: radial-gradient(circle at center, #151515 0%, #0a0a0a 100%);
         }
 
-        .side { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-
+        .side { display: flex; flex-direction: column; gap: 10px; transition: all 0.5s ease; }
         .zone-row { display: flex; gap: 10px; flex: 1; }
 
         .zone {
@@ -52,166 +48,176 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            transition: 0.3s;
+            min-height: 120px;
         }
 
-        /* EFFETTI NEON */
-        .player-side .zone { border-bottom: 2px solid var(--player-aura); }
-        .ai-side .zone { border-top: 2px solid var(--ai-aura); }
-        
         .zone::after {
             content: attr(data-label);
             position: absolute;
-            font-size: 10px;
+            font-size: 9px;
             color: #444;
-            text-transform: uppercase;
             letter-spacing: 2px;
+            bottom: 10px;
         }
 
-        /* MANO DEL GIOCATORE */
-        #hand {
-            height: 120px;
-            background: rgba(0,0,0,0.5);
+        /* --- LAYOUT DINAMICI --- */
+        
+        /* Modalità VS AI: Speculare */
+        .mode-ai .side { flex: 1; }
+        .mode-ai .ai-side .zone { border-bottom: 2px solid var(--ai-aura); }
+        .mode-ai .player-side .zone { border-top: 2px solid var(--player-aura); }
+
+        /* Modalità GOLDFISH: Tutto spazio al giocatore */
+        .mode-goldfish .ai-side { display: none; }
+        .mode-goldfish .player-side { flex: 1; }
+        .mode-goldfish .player-side .zone { border-bottom: 2px solid var(--player-aura); }
+        .mode-goldfish .zone-row { flex-direction: column; } /* Zone impilate come nell'ultimo screen */
+
+        /* --- MANO --- */
+        #hand-container {
+            height: 140px;
+            background: rgba(0,0,0,0.8);
             border-top: 1px solid #333;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            gap: 10px;
             padding: 10px;
         }
 
-        /* SIDEBAR CONTROLLI */
+        /* --- SIDEBAR --- */
         .sidebar {
-            background: #111;
-            border-left: 1px solid #333;
+            background: #0f0f0f;
+            border-left: 1px solid #222;
             padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .life-box {
             background: #000;
-            padding: 20px;
+            padding: 15px;
             border-radius: 15px;
             text-align: center;
-            border: 1px solid #222;
+            border: 1px solid #333;
         }
 
-        .life-total { font-size: 54px; font-weight: 900; color: var(--player-aura); display: block; }
+        .life-total { font-size: 42px; font-weight: 900; display: block; }
+        .player-life { color: var(--player-aura); }
+        .ai-life { color: var(--ai-aura); }
 
-        .btn-group { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
-        .btn-sm { 
-            background: #222; border: none; color: white; width: 40px; height: 40px; 
-            border-radius: 50%; cursor: pointer; font-size: 20px; 
+        .btn-group { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+        .btn-circle { 
+            background: #222; border: none; color: white; width: 35px; height: 35px; 
+            border-radius: 50%; cursor: pointer; font-weight: bold;
         }
-        .btn-sm:hover { background: #333; }
 
         .btn-action {
             background: var(--mox-purple);
-            color: white; border: none; padding: 15px;
+            color: white; border: none; padding: 12px;
             border-radius: 8px; font-weight: bold; cursor: pointer;
-            text-transform: uppercase;
+            transition: 0.2s;
         }
+        .btn-action:hover { filter: brightness(1.2); }
 
-        /* CARTE */
-        .card-mini {
-            width: 70px; height: 100px;
-            background: #222; border-radius: 5px;
-            border: 1px solid #444;
-            cursor: pointer;
-        }
-
-        /* MODALITÀ GOLDFISH */
         .hidden { display: none !important; }
     </style>
 </head>
-<body>
+<body class="mode-ai" id="main-body">
 
 <div id="arena">
-    <div id="table">
-        <div class="side ai-side" id="ai-area">
-            <div class="zone-row">
-                <div class="zone" data-label="AI Creatures"></div>
-                <div class="zone" data-label="AI Lands"></div>
+    <div id="table-wrapper" style="display:flex; flex-direction:column; flex:1;">
+        <div id="table">
+            <div class="side ai-side" id="ai-area">
+                <div class="zone-row">
+                    <div class="zone" data-label="AI CREATURES"></div>
+                    <div class="zone" data-label="AI LANDS"></div>
+                </div>
+            </div>
+
+            <div class="side player-side">
+                <div class="zone-row">
+                    <div class="zone" data-label="YOUR LANDS"></div>
+                    <div class="zone" data-label="YOUR CREATURES"></div>
+                    <div class="zone" data-label="OTHER PERMANENTS"></div>
+                </div>
             </div>
         </div>
 
-        <div class="side player-side">
-            <div class="zone-row">
-                <div class="zone" data-label="Your Lands"></div>
-                <div class="zone" data-label="Your Creatures"></div>
-                <div class="zone" data-label="Other Permanents"></div>
-            </div>
-        </div>
-
-        <div id="hand">
-            <p style="color:#444; font-size: 12px;">LA TUA MANO APPARIRÀ QUI</p>
+        <div id="hand-container">
+            <span style="font-size: 10px; color:#555; margin-bottom: 10px;">LA TUA MANO</span>
+            <div id="hand-cards" style="display:flex; gap:10px;">
+                </div>
         </div>
     </div>
 
     <div class="sidebar">
-        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; text-align:left;">← Torna alla Libreria</button>
+        <button onclick="window.location.href='index.html'" style="background:none; border:none; color:#555; cursor:pointer; margin-bottom:10px;">← ESCI DALL'ARENA</button>
         
         <div class="life-box">
-            <span style="font-size: 12px; color: #444;">PLAYER LIFE</span>
-            <span id="player-life" class="life-total">40</span>
+            <small style="color:#555">PLAYER LIFE</small>
+            <span id="p-life-val" class="life-total player-life">40</span>
             <div class="btn-group">
-                <button class="btn-sm" onclick="changeLife(-1)">-</button>
-                <button class="btn-sm" onclick="changeLife(1)">+</button>
+                <button class="btn-circle" onclick="updateLife('p', -1)">-</button>
+                <button class="btn-circle" onclick="updateLife('p', 1)">+</button>
             </div>
         </div>
 
-        <div id="ai-life-box" class="life-box" style="border-color: var(--ai-aura);">
-            <span style="font-size: 12px; color: #444;">AI LIFE</span>
-            <span id="ai-life" class="life-total" style="color: var(--ai-aura);">40</span>
+        <div id="ai-life-box" class="life-box">
+            <small style="color:#555">AI LIFE</small>
+            <span id="ai-life-val" class="life-total ai-life">40</span>
+            <div class="btn-group">
+                <button class="btn-circle" onclick="updateLife('ai', -1)">-</button>
+                <button class="btn-circle" onclick="updateLife('ai', 1)">+</button>
+            </div>
         </div>
 
         <button class="btn-action" onclick="drawCard()">PESCA CARTA</button>
-        <button class="btn-action" style="background:#444" onclick="shuffleDeck()">MESCOLA</button>
-        
-        <div style="margin-top: auto;">
-            <p id="game-info" style="font-size: 10px; color: #444; text-transform: uppercase;"></p>
+        <button class="btn-action" style="background:#333" onclick="location.reload()">RIAVVIA MATCH</button>
+
+        <div id="preview-container" style="margin-top:auto; background:#000; height: 180px; border-radius:10px; border:1px dashed #333; display:flex; align-items:center; justify-content:center; flex-direction:column;">
+            <span style="color:#333; font-size: 12px;">CARD PREVIEW</span>
         </div>
     </div>
 </div>
 
 <script>
-    // 1. GESTIONE MODALITÀ E URL
     const params = new URLSearchParams(window.location.search);
     const mode = params.get('mode') || 'ai';
     const deckUrl = params.get('deck');
 
-    document.getElementById('game-info').innerText = `MODALITÀ: ${mode}`;
+    // Applica classe modalità al caricamento
+    document.getElementById('main-body').className = `mode-${mode}`;
 
     if (mode === 'goldfish') {
-        document.getElementById('ai-area').classList.add('hidden');
         document.getElementById('ai-life-box').classList.add('hidden');
     }
 
-    // 2. LOGICA DI GIOCO BASE
-    let life = 40;
-    function changeLife(amt) {
-        life += amt;
-        document.getElementById('player-life').innerText = life;
+    // Gestione Vite
+    let pLife = 40;
+    let aiLife = 40;
+
+    function updateLife(who, amt) {
+        if (who === 'p') {
+            pLife += amt;
+            document.getElementById('p-life-val').innerText = pLife;
+        } else {
+            aiLife += amt;
+            document.getElementById('ai-life-val').innerText = aiLife;
+        }
     }
 
     function drawCard() {
-        console.log("Pesca una carta...");
-        // Qui integreremo la chiamata API a Scryfall/Moxfield
+        // Logica futura per pescare
+        const hand = document.getElementById('hand-cards');
+        const cardPlaceholder = document.createElement('div');
+        cardPlaceholder.style.width = "60px";
+        cardPlaceholder.style.height = "85px";
+        cardPlaceholder.style.background = "#222";
+        cardPlaceholder.style.borderRadius = "4px";
+        cardPlaceholder.style.border = "1px solid #444";
+        hand.appendChild(cardPlaceholder);
     }
-
-    // 3. CARICAMENTO MAZZO (LOGICA PROXY)
-    async function loadMoxfieldDeck(url) {
-        console.log("Iniziando caricamento mazzo:", url);
-        // Per evitare l'errore CORS, useremo in futuro un fetcher specifico
-        // Per ora simuliamo il successo
-        setTimeout(() => {
-            console.log("Mazzo pronto nell'Arena!");
-        }, 1000);
-    }
-
-    if (deckUrl) loadMoxfieldDeck(deckUrl);
 </script>
 
 </body>
