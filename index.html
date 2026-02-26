@@ -2,120 +2,116 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Wix Style Editor</title>
+    <title>MoxSim Arena - Welcome</title>
     <style>
-        :root { --bg: #0a0a0a; --accent: #007bff; --brd: #222; --card-w: 80px; }
-        body, html { margin: 0; padding: 0; height: 100%; background: var(--bg); color: white; font-family: sans-serif; overflow: hidden; }
-
-        /* HEADER */
-        #top { height: 45px; background: #000; display: flex; align-items: center; padding: 0 15px; border-bottom: 1px solid var(--brd); gap: 10px; }
-        input { background: #111; border: 1px solid #333; color: white; padding: 6px; border-radius: 4px; flex: 1; }
-        .btn { background: var(--accent); border: none; color: white; padding: 7px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
-
-        /* LAYOUT PRINCIPALE */
-        #container { display: flex; height: calc(100vh - 45px); width: 100vw; }
+        :root { --bg: #050505; --accent: #007bff; --glass: rgba(255, 255, 255, 0.05); }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
         
-        /* AREA GIOCO */
-        #field { flex-grow: 1; display: flex; flex-direction: column; border-right: 1px solid var(--brd); }
-        .player-side { flex: 1; display: grid; grid-template-columns: 300px 5px 1fr; grid-template-rows: 1fr 5px 150px; background: #111; gap: 0; }
-        
-        /* ZONE */
-        .zone { background: var(--bg); position: relative; overflow: auto; padding: 10px; display: flex; flex-wrap: wrap; gap: 10px; }
-        .zone::after { content: attr(data-label); position: absolute; top: 5px; left: 10px; font-size: 10px; color: #444; pointer-events: none; }
-        
-        /* RESIZERS (Le barre trascinabili stile Wix) */
-        .resizer-v { background: #1a1a1a; cursor: col-resize; transition: 0.2s; }
-        .resizer-h { background: #1a1a1a; cursor: row-resize; transition: 0.2s; }
-        .resizer-v:hover, .resizer-h:hover { background: var(--accent); }
+        /* SFONDO DINAMICO */
+        .hero-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #1a1a1a 0%, #050505 100%); opacity: 0.8; }
 
-        /* SIDEBAR COMPATTA (Basata su ugviy.png) */
-        #sidebar { width: 260px; background: #0d0d0d; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
-        .stat-box { background: #000; border: 1px solid var(--brd); padding: 15px; text-align: center; border-radius: 8px; }
-        .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .slot { height: 110px; background: #050505; border: 1px solid #222; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; }
+        .container { width: 900px; padding: 40px; text-align: center; background: var(--glass); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
 
-        /* CARDS */
-        .card { width: var(--card-w); aspect-ratio: 2.5/3.5; border-radius: 5px; cursor: grab; background: #222; }
-        .card img { width: 100%; height: 100%; border-radius: 5px; }
-        .card:hover { transform: scale(3); z-index: 100; }
+        h1 { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 10px; background: linear-gradient(to right, #fff, #666); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p { color: #888; margin-bottom: 30px; }
+
+        /* INPUT AREA */
+        .input-group { display: flex; gap: 10px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; border: 1px solid #333; margin-bottom: 40px; }
+        input { flex: 1; background: transparent; border: none; color: white; padding: 10px; font-size: 16px; outline: none; }
+        .btn-main { background: var(--accent); color: white; border: none; padding: 12px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-main:hover { transform: scale(1.05); box-shadow: 0 0 20px rgba(0, 123, 255, 0.4); }
+
+        /* DECK LIBRARY */
+        .deck-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; text-align: left; }
+        .deck-card { background: #111; border: 1px solid #222; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; position: relative; }
+        .deck-card:hover { border-color: var(--accent); background: #151515; }
+        .deck-card h3 { margin: 0 0 5px 0; font-size: 14px; }
+        .deck-card span { font-size: 12px; color: #555; }
+        .delete-btn { position: absolute; top: 10px; right: 10px; color: #ff4757; font-size: 12px; opacity: 0; }
+        .deck-card:hover .delete-btn { opacity: 1; }
+
+        /* LOGIN OVERLAY (Semplice per ora) */
+        .user-nav { position: absolute; top: 20px; right: 20px; display: flex; gap: 15px; font-size: 14px; color: #888; }
+        .user-nav b { color: var(--accent); cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="top">
-    <b style="color:var(--accent)">MOXSIM EDIT</b>
-    <input type="text" id="p1" placeholder="Moxfield URL">
-    <button class="btn" onclick="load()">CARICA</button>
-</div>
+    <div class="hero-bg"></div>
 
-<div id="container">
-    <div id="field">
-        <div class="player-side" style="transform: rotate(180deg)">
-             <div class="zone" data-label="OTHERS"></div><div class="resizer-v"></div><div class="zone" data-label="CREATURES"></div>
-             <div class="resizer-h" style="grid-column: span 3"></div>
-             <div class="zone" data-label="HAND"></div><div class="resizer-v"></div><div class="zone" data-label="LANDS"></div>
-        </div>
-
-        <div class="player-side" id="p-layout">
-            <div class="zone" data-label="Artefacts/Enchants" id="p-others"></div>
-            <div class="resizer-v" id="v-drag"></div>
-            <div class="zone" data-label="Creatures" id="p-creats"></div>
-            
-            <div class="resizer-h" id="h-drag" style="grid-column: span 3"></div>
-            
-            <div class="zone" data-label="Hand" id="p-hand"></div>
-            <div class="resizer-v" id="v-drag-2"></div>
-            <div class="zone" data-label="Lands" id="p-lands"></div>
-        </div>
+    <div class="user-nav">
+        Hai già un account? <b onclick="alert('Sistema di registrazione in arrivo!')">Accedi Gratis</b>
     </div>
 
-    <div id="sidebar">
-        <div class="stat-box">
-            <div style="color:#ff4757">CPU: 40</div>
-            <button class="btn" style="background:#ff4757; width:100%; margin-top:10px">AI MOVE</button>
+    <div class="container">
+        <h1>MOXSIM ARENA</h1>
+        <p>Incolla il link del tuo mazzo Moxfield per iniziare la simulazione.</p>
+
+        <div class="input-group">
+            <input type="text" id="deckUrl" placeholder="https://www.moxfield.com/decks/...">
+            <input type="text" id="deckName" placeholder="Nome Mazzo (Opzionale)" style="flex: 0.4; border-left: 1px solid #333;">
+            <button class="btn-main" onclick="saveDeck()">SALVA E GIOCA</button>
         </div>
-        <div class="mini-grid">
-            <div class="slot">GRAVE</div><div class="slot">EXILE</div>
+
+        <div style="text-align: left; margin-bottom: 15px;">
+            <h2 style="font-size: 18px;">I tuoi mazzi salvati</h2>
         </div>
-        <div style="flex-grow:1"></div>
-        <div class="mini-grid">
-            <div class="slot">EXILE</div><div class="slot">GRAVE</div>
-        </div>
-        <div class="stat-box">
-            <div style="color:var(--accent)">YOU: 40</div>
-            <button class="btn" style="width:100%; margin-top:10px">DRAW CARD</button>
-        </div>
-        <div class="mini-grid">
-            <div class="slot">CMD</div><div class="slot">LIB</div>
-        </div>
+        
+        <div class="deck-grid" id="deckLibrary">
+            </div>
     </div>
-</div>
 
 <script>
-    // LOGICA RESIZER (WIX STYLE)
-    const layout = document.getElementById('p-layout');
-    const hDrag = document.getElementById('h-drag');
-    const vDrag = document.getElementById('v-drag');
+    // Carica i mazzi dal salvataggio locale all'avvio
+    window.onload = displayDecks;
 
-    // Ridimensionamento Orizzontale (Altezza Mano/Terre)
-    hDrag.onmousedown = (e) => {
-        document.onmousemove = (ev) => {
-            let delta = window.innerHeight - ev.clientY;
-            layout.style.gridTemplateRows = `1fr 5px ${delta - 45}px`;
-        };
-        document.onmouseup = () => document.onmousemove = null;
-    };
+    function saveDeck() {
+        const url = document.getElementById('deckUrl').value;
+        const name = document.getElementById('deckName').value || "Mazzo senza nome";
+        
+        if (!url.includes("moxfield.com")) {
+            alert("Per favore, inserisci un link valido di Moxfield.");
+            return;
+        }
 
-    // Ridimensionamento Verticale (Larghezza Mano vs Terre)
-    vDrag.onmousedown = (e) => {
-        document.onmousemove = (ev) => {
-            layout.style.gridTemplateColumns = `${ev.clientX}px 5px 1fr`;
-        };
-        document.onmouseup = () => document.onmousemove = null;
-    };
+        const newDeck = { id: Date.now(), name, url };
+        let decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
+        decks.push(newDeck);
+        localStorage.setItem('moxDecks', JSON.stringify(decks));
+        
+        // Pulizia input e aggiornamento lista
+        document.getElementById('deckUrl').value = '';
+        document.getElementById('deckName').value = '';
+        displayDecks();
+        
+        // Qui potresti reindirizzare alla pagina di gioco:
+        // window.location.href = `game.html?deck=${encodeURIComponent(url)}`;
+    }
 
-    function load() {
-        alert("Inserisci URL e trascina le barre blu per regolare il tuo tavolo!");
+    function displayDecks() {
+        const container = document.getElementById('deckLibrary');
+        const decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
+        
+        container.innerHTML = decks.length ? '' : '<p style="grid-column: span 3; color: #444;">Nessun mazzo salvato. Comincia ora!</p>';
+        
+        decks.forEach(deck => {
+            const div = document.createElement('div');
+            div.className = 'deck-card';
+            div.onclick = () => window.location.href = `game.html?deck=${encodeURIComponent(deck.url)}`;
+            div.innerHTML = `
+                <div class="delete-btn" onclick="event.stopPropagation(); deleteDeck(${deck.id})">Rimuovi</div>
+                <h3>${deck.name}</h3>
+                <span>Moxfield Deck</span>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function deleteDeck(id) {
+        let decks = JSON.parse(localStorage.getItem('moxDecks') || '[]');
+        decks = decks.filter(d => d.id !== id);
+        localStorage.setItem('moxDecks', JSON.stringify(decks));
+        displayDecks();
     }
 </script>
 </body>
