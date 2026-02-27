@@ -215,36 +215,35 @@
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
-async function createToken(tokenName, typeLine) {
+async function generateToken(tokenName, typeLine) {
     try {
-        // 1. Cerchiamo l'immagine ufficiale su Scryfall tramite il nome
+        // Cerchiamo il token su Scryfall
         const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${tokenName}+token`);
         const data = await response.json();
         
+        // Prendiamo l'URL dell'immagine (gestisce anche le carte a due facce)
         const imageUrl = data.image_uris ? data.image_uris.normal : data.card_faces[0].image_uris.normal;
 
-        // 2. Creiamo l'oggetto carta per il tuo sistema
+        // Creiamo l'oggetto per il simulatore
         const tokenData = {
             name: tokenName,
             type_line: typeLine,
             image_uris: { normal: imageUrl },
-            isToken: true,
-            scryfall_id: data.id
+            isToken: true
         };
 
-        // 3. Lo aggiungiamo al campo (Creature o Altro)
+        // Decidiamo dove metterlo (Creature o Non-Creature)
         const zoneId = typeLine.toLowerCase().includes('creature') ? 'field-creatures' : 'field-others';
         const zone = document.getElementById(zoneId);
         
-        // Usa la tua funzione esistente per creare l'elemento HTML della carta
-        const tokenElement = createCardUI(tokenData, 'field');
-        zone.appendChild(tokenElement);
-
+        if (zone) {
+            // Usiamo la tua funzione UI per disegnare la carta
+            zone.appendChild(createCardUI(tokenData, 'field'));
+        }
     } catch (error) {
-        console.error("Errore nel recupero del token:", error);
-        alert("Impossibile trovare l'immagine del token su Scryfall.");
+        console.error("Errore Scryfall:", error);
     }
-    toggleTokenMenu();
+    toggleTokenMenu(); // Chiude il menu
 }
 
     function removeFromAll(cardData, from) {
