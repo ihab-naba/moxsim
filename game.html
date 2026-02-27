@@ -56,7 +56,7 @@
     <div id="board">
         <div id="board-header"><div class="turn-badge" id="turn-display">Turno 1</div></div>
         <div class="zone" data-label="Creatures" id="field-creatures" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
-        <div class="zone" data-label="Non-Creatures" id="field-others" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
+        <div class="zone" data-label="Others" id="field-others" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
         <div class="zone" data-label="Lands" id="field-lands" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
         <div id="bottom-bar">
             <div id="hand-container">
@@ -68,8 +68,8 @@
                 <div class="pile-visual sleeve" onclick="drawCard()"></div>
             </div>
             <div class="pile-zone">
-                <div class="pile-label">Grave (<span id="count-grave">0</span>)</div>
-                <div class="pile-visual" id="grave-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="grave"></div>
+                <div class="pile-label">Graveyard (<span id="count-grave">0</span>)</div>
+                <div class="pile-visual" id="graveyard-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="grave"></div>
             </div>
             <div class="pile-zone">
                 <div class="pile-label">Exile (<span id="count-exile">0</span>)</div>
