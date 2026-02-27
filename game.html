@@ -143,26 +143,25 @@
         return cmc;
     }
 
-    function createCardUI(cardData, location) {
-    if (!cardData) return document.createElement('div');
-    const img = document.createElement('img');
-    
-    // LOGICA FIXATA: Se è un token usa l'URL diretto, altrimenti usa l'ID Scryfall
-    if (cardData.isToken && cardData.image_uris) {
-        img.src = cardData.image_uris.normal;
-    } else if (cardData.scryfall_id) {
-        img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
-    } else {
-        // Fallback se manca tutto
-        img.src = "https://c1.scryfall.com/file/scryfall-cards/masks/back.jpg";
-    }
-        // Logica immagine: se è un token ha già l'URL pronto, se è una carta normale usa scryfall_id
-        img.src = cardData.image_uris ? cardData.image_uris.normal : `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
+   function createCardUI(cardData, location) {
+        if (!cardData) return document.createElement('div');
+        const img = document.createElement('img');
         
+        // 1. GESTIONE IMMAGINE (Questa è la parte che dava problemi)
+        if (cardData.isToken && cardData.image_uris) {
+            img.src = cardData.image_uris.normal;
+        } else if (cardData.scryfall_id) {
+            img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
+        } else {
+            img.src = "https://c1.scryfall.com/file/scryfall-cards/masks/back.jpg";
+        }
+        
+        // 2. STILE E TRASCINAMENTO
         img.className = 'card ' + (location === 'hand' ? 'hand-card' : '');
         img.draggable = true;
         img.dataset.cardData = JSON.stringify(cardData);
         
+        // 3. LOGICA CLICK (TAP E GIOCATA)
         img.onclick = () => {
             const parent = img.parentElement ? img.parentElement.id : "";
             if (parent === 'hand' || parent === 'commander-zone') {
@@ -172,6 +171,7 @@
             }
         };
 
+        // 4. LOGICA DRAG & DROP
         img.ondragstart = (e) => { 
             draggedCardData = cardData; 
             e.dataTransfer.setData("text/plain", cardData.scryfall_id); 
@@ -181,6 +181,7 @@
             img.style.opacity = "1"; 
             document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); 
         };
+        
         return img;
     }
 
