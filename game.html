@@ -200,8 +200,41 @@
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
     function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
     function showError(m) { const e = document.getElementById('error-msg'); e.innerText = m; e.style.display = 'block'; setTimeout(() => e.style.display = 'none', 1500); }
-    function openScry() { if (deck.length === 0) return; const c = deck[deck.length-1]; document.getElementById('scry-overlay').style.display = 'flex'; document.getElementById('scry-content').innerHTML = `<img src="${c.image_uris.normal}" style="height:350px; border-radius:15px">`; }
-    function scryAction(p) { const c = deck.pop(); if (p === 'top') deck.push(c); else deck.unshift(c); closeScry(); updateUI(); }
+function openScry() {
+    if (deck.length === 0) {
+        showError("Mazzo vuoto!");
+        return;
+    }
+    const card = deck[deck.length - 1];
+    const overlay = document.getElementById('scry-overlay');
+    const content = document.getElementById('scry-content');
+    
+    // Mostriamo l'overlay
+    overlay.style.display = 'flex';
+    
+    // Recuperiamo l'immagine corretta (gestendo i vari formati Scryfall)
+    const imgUrl = card.image_uris ? card.image_uris.normal : `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`;
+    
+    content.innerHTML = `
+        <div style="text-align:center; margin-bottom:20px;">
+            <h3 style="color:var(--mox-blue); margin-bottom:10px;">SCRY 1</h3>
+            <img src="${imgUrl}" style="height:450px; border-radius:20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #333;">
+        </div>
+    `;
+}
+
+function scryAction(pos) {
+    const card = deck.pop();
+    if (pos === 'top') {
+        deck.push(card);
+        showError("Carta rimessa in cima");
+    } else {
+        deck.unshift(card); // La mette in fondo al mazzo
+        showError("Carta messa in fondo");
+    }
+    closeScry();
+    updateUI();
+}
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
     function toggleTokenMenu() { showError("Funzione Token in arrivo..."); } // Semplificato per spazio
 
