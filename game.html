@@ -126,18 +126,90 @@
         } catch (err) { console.error("Errore mazzo", err); }
     }
 
-    function calculateCMC(manaCost) {
-        if (!manaCost || typeof manaCost !== 'string') return 0;
-        let cmc = 0;
-        const matches = manaCost.match(/\{(.+?)\}/g);
-        if (!matches) return 0;
-        matches.forEach(m => {
-            const val = m.replace('{', '').replace('}', '');
-            if (!isNaN(val)) cmc += parseInt(val); else cmc += 1;
-        });
-        return cmc;
+    // Estrae i colori richiesti: {1}{W}{B} -> { generic: 1, colors: ['W', 'B'] }
+function getManaDetails(manaCost) {
+    if (!manaCost) return { generic: 0, colors: [] };
+    const colors = [];
+    let generic = 0;
+    const matches = manaCost.match(/\{(.+?)\}/g) || [];
+    
+    matches.forEach(m => {
+        const symbol = m.replace('{', '').replace('}', '');
+        if (!isNaN(symbol)) {
+            generic += parseInt(symbol);
+        } else {
+            // Gestisce W, U, B, R, G (ignora simboli strani per ora)
+            colors.push(symbol.toUpperCase());
+        }
+    });
+    return { generic, colors };
+}
+
+// Capisce che colori produce una terra
+function getProducedMana(cardData) {
+    // Se è una terra base o ha color_identity
+    if (cardData.type_line.includes("Island")) return ["U"];
+    if (cardData.type_line.includes("Plains")) return ["W"];
+    if (cardData.type_line.includes("Swamp")) return ["B"];
+    if (cardData.type_line.includes("Mountain")) return ["R"];
+    if (cardData.type_line.includes("Forest")) return ["G"];
+    return cardData.color_identity || []; // Per le terre doppie/multicolore
+}
+
+function playCard(cardData, from) {
+    const type = (cardData.type_line || "").toLowerCase();
+    const isLand = type.includes('land');
+
+    if (!isLand) {
+        const cost = getManaDetails(cardData.mana_cost);
+        const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
+        let landsToTap = [];
+        let tempUntapped = [...untappedLands];
+
+        // 1. Tappa i colori specifici
+        for (let neededColor of cost.colors) {
+            const index = tempUntapped.findIndex(l => {
+                const data = JSON.parse(l.dataset.cardData);
+                return getProducedMana(data).includes(neededColor);
+            });
+
+            if (index === -1) {
+                showError("Manca mana colore: " + neededColor);
+                return;
+            }
+            landsToTap.push(tempUntapped.splice(index, 1)[0]);
+        }
+
+        // 2. Tappa il mana generico
+        if (tempUntapped.length < cost.generic) {
+            showError("Mana insufficiente!");
+            return;
+        }
+        for (let i = 0; i < cost.generic; i++) {
+            landsToTap.push(tempUntapped.splice(0, 1)[0]);
+        }
+
+        // Esegui il tap visivo
+        landsToTap.forEach(l => l.classList.add('tapped'));
     }
 
+    // --- Logica di spostamento carta (invariata) ---
+    if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+    const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
+    document.querySelectorAll(selector).forEach(c => {
+        if(JSON.parse(c.dataset.cardData).scryfall_id === cardData.scryfall_id) c.remove();
+    });
+    const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
+    document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
+    updateUI();
+}
+
+function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.innerText = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 2000);
+}
     function createCardUI(cardData, location) {
         if (!cardData || !cardData.scryfall_id) return document.createElement('div');
         const img = document.createElement('img');
