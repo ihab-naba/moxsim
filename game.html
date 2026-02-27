@@ -226,20 +226,31 @@
     
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
 
-    // FUNZIONE TOKEN SPOSTATA QUI CORRETTAMENTE
     function toggleTokenMenu() {
-        const treasureData = {
-            name: "Treasure",
-            type_line: "Artifact Token",
-            image_uris: { normal: "https://cards.scryfall.io/normal/front/e/1/e1464663-e354-4342-a6ff-86f30440332e.jpg" },
-            scryfall_id: "token-" + Date.now()
-        };
-        const tokenUI = createCardUI(treasureData, 'field');
-        tokenUI.classList.add('token');
-        document.getElementById('field-others').appendChild(tokenUI);
-        showError("Creato Token Tesoro!");
-        updateManaTracker();
-    }
+    // Usiamo il link "spinta" che mi hai dato per il Tesoro
+    const treasureUrl = "https://cards.scryfall.io/large/front/b/b/bbe8bced-9524-47f6-a600-bf4ddc072698.jpg?1562539795";
+    
+    const treasureData = {
+        name: "Treasure",
+        type_line: "Artifact Token",
+        // Inseriamo il link direttamente qui
+        image_uris: { normal: treasureUrl },
+        scryfall_id: "token-" + Date.now()
+    };
+    
+    // Creiamo l'elemento UI
+    const tokenUI = createCardUI(treasureData, 'field');
+    
+    // Applichiamo lo stile token e forziamo l'altezza per evitare l'effetto "allungato" dello screenshot
+    tokenUI.classList.add('token');
+    tokenUI.style.height = "130px"; 
+    tokenUI.style.width = "auto";
+
+    document.getElementById('field-others').appendChild(tokenUI);
+    
+    showError("Tesoro creato con successo!");
+    updateManaTracker();
+}
     
     window.onload = init;
 </script>
