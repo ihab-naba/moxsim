@@ -236,8 +236,30 @@ function scryAction(pos) {
     updateUI();
 }
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
-    function toggleTokenMenu() { showError("Funzione Token in arrivo..."); } // Semplificato per spazio
 
+    .token { 
+    border: 2px dashed var(--mox-blue) !important; 
+    background: #222 !important; 
+    box-shadow: 0 0 10px rgba(0,123,255,0.3);
+}
+  function toggleTokenMenu() {
+    // Creiamo un semplice "Tesoro" come test
+    const treasureData = {
+        name: "Treasure",
+        type_line: "Artifact Token",
+        image_uris: { normal: "https://cards.scryfall.io/normal/front/e/1/e1464663-e354-4342-a6ff-86f30440332e.jpg" },
+        scryfall_id: "token-" + Date.now() // ID univoco per non confonderlo
+    };
+    
+    // Lo mettiamo nella zona "Non-Creatures"
+    const tokenUI = createCardUI(treasureData, 'field');
+    tokenUI.classList.add('token');
+    document.getElementById('field-others').appendChild(tokenUI);
+    
+    showError("Creato Token Tesoro!");
+    updateManaTracker();
+}
+    
     window.onload = init;
 </script>
 </body>
