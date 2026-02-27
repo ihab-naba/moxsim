@@ -144,9 +144,18 @@
     }
 
     function createCardUI(cardData, location) {
-        if (!cardData || !cardData.scryfall_id) return document.createElement('div');
-        const img = document.createElement('img');
-        
+    if (!cardData) return document.createElement('div');
+    const img = document.createElement('img');
+    
+    // LOGICA FIXATA: Se è un token usa l'URL diretto, altrimenti usa l'ID Scryfall
+    if (cardData.isToken && cardData.image_uris) {
+        img.src = cardData.image_uris.normal;
+    } else if (cardData.scryfall_id) {
+        img.src = `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
+    } else {
+        // Fallback se manca tutto
+        img.src = "https://c1.scryfall.com/file/scryfall-cards/masks/back.jpg";
+    }
         // Logica immagine: se è un token ha già l'URL pronto, se è una carta normale usa scryfall_id
         img.src = cardData.image_uris ? cardData.image_uris.normal : `https://api.scryfall.com/cards/${cardData.scryfall_id}?format=image&version=normal`;
         
@@ -217,33 +226,30 @@
 
 async function generateToken(tokenName, typeLine) {
     try {
-        // Cerchiamo il token su Scryfall
         const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${tokenName}+token`);
         const data = await response.json();
         
-        // Prendiamo l'URL dell'immagine (gestisce anche le carte a due facce)
         const imageUrl = data.image_uris ? data.image_uris.normal : data.card_faces[0].image_uris.normal;
 
-        // Creiamo l'oggetto per il simulatore
         const tokenData = {
-            name: tokenName,
-            type_line: typeLine,
+            name: data.name, // Nome ufficiale da Scryfall
+            type_line: data.type_line,
             image_uris: { normal: imageUrl },
-            isToken: true
+            isToken: true,
+            scryfall_id: data.id, // AGGIUNTO: Fondamentale per il drag & drop
+            mana_cost: "" // I token solitamente costano 0
         };
 
-        // Decidiamo dove metterlo (Creature o Non-Creature)
-        const zoneId = typeLine.toLowerCase().includes('creature') ? 'field-creatures' : 'field-others';
+        const zoneId = data.type_line.toLowerCase().includes('creature') ? 'field-creatures' : 'field-others';
         const zone = document.getElementById(zoneId);
         
         if (zone) {
-            // Usiamo la tua funzione UI per disegnare la carta
             zone.appendChild(createCardUI(tokenData, 'field'));
         }
     } catch (error) {
         console.error("Errore Scryfall:", error);
     }
-    toggleTokenMenu(); // Chiude il menu
+    toggleTokenMenu();
 }
 
     function removeFromAll(cardData, from) {
