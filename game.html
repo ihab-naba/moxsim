@@ -48,6 +48,20 @@
 
         #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; }
         #mulligan-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; flex-direction: column; align-items: center; justify-content: center; }
+        
+        <div id="token-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:7000; flex-direction:column; align-items:center; justify-content:center;">
+    <div style="background:#1a1a1a; padding:25px; border-radius:15px; border:2px solid var(--27ae60); text-align:center; max-width:500px;">
+        <h2 style="color:#27ae60; margin-top:0;">Scegli Token</h2>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+            <button class="btn" onclick="addToken('treasure')">💰 Tesoro</button>
+            <button class="btn" onclick="addToken('soldier')">⚔️ Soldato 1/1</button>
+            <button class="btn" onclick="addToken('beast')">🌲 Bestia 3/3</button>
+            <button class="btn" onclick="addToken('clue')">🔍 Indizio</button>
+        </div>
+        <button class="btn" style="background:#a82331; width:100%" onclick="closeTokenMenu()">Chiudi</button>
+    </div>
+</div>
+        
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
         
         /* STILE TOKEN AGGIUNTO QUI CORRETTAMENTE */
@@ -226,29 +240,40 @@
     
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
 
-    function toggleTokenMenu() {
-    // Usiamo il link "spinta" che mi hai dato per il Tesoro
-    const treasureUrl = "https://cards.scryfall.io/large/front/b/b/bbe8bced-9524-47f6-a600-bf4ddc072698.jpg?1562539795";
-    
-    const treasureData = {
-        name: "Treasure",
-        type_line: "Artifact Token",
-        // Inseriamo il link direttamente qui
-        image_uris: { normal: treasureUrl },
+   function toggleTokenMenu() {
+    document.getElementById('token-overlay').style.display = 'flex';
+}
+
+function closeTokenMenu() {
+    document.getElementById('token-overlay').style.display = 'none';
+}
+
+function addToken(type) {
+    const tokens = {
+        treasure: { name: "Treasure", type: "Artifact", url: "https://cards.scryfall.io/large/front/b/b/bbe8bced-9524-47f6-a600-bf4ddc072698.jpg?1562539795" },
+        soldier: { name: "Soldier", type: "Creature", url: "https://cards.scryfall.io/large/front/5/8/58ad9c94-8173-4bd9-a47e-bc438997363e.jpg?1562639803" },
+        beast: { name: "Beast", type: "Creature", url: "https://cards.scryfall.io/large/front/a/1/a13998bc-643d-47ad-b16a-7286392576b9.jpg?1562636830" },
+        clue: { name: "Clue", type: "Artifact", url: "https://cards.scryfall.io/large/front/d/e/de33f572-132d-4234-9271-972cc943960f.jpg?1576385419" }
+    };
+
+    const data = tokens[type];
+    const tokenData = {
+        name: data.name,
+        type_line: data.type,
+        image_uris: { normal: data.url },
         scryfall_id: "token-" + Date.now()
     };
-    
-    // Creiamo l'elemento UI
-    const tokenUI = createCardUI(treasureData, 'field');
-    
-    // Applichiamo lo stile token e forziamo l'altezza per evitare l'effetto "allungato" dello screenshot
-    tokenUI.classList.add('token');
-    tokenUI.style.height = "130px"; 
-    tokenUI.style.width = "auto";
 
-    document.getElementById('field-others').appendChild(tokenUI);
+    const tokenUI = createCardUI(tokenData, 'field');
+    tokenUI.classList.add('token');
+    tokenUI.style.height = "130px";
+
+    // Se è una creatura la mette sopra, altrimenti in mezzo
+    const zone = data.type === "Creature" ? 'field-creatures' : 'field-others';
+    document.getElementById(zone).appendChild(tokenUI);
     
-    showError("Tesoro creato con successo!");
+    closeTokenMenu();
+    showError(`Creato ${data.name}!`);
     updateManaTracker();
 }
     
