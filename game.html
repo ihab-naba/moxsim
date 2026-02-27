@@ -214,17 +214,25 @@
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
- function createToken(name, type, scryId) {
+function createToken(name, type, scryId) {
+    // Creiamo un oggetto "finta carta" che il tuo sistema UI può leggere
     const tokenData = {
         name: name,
         type_line: type,
-        scryfall_id: scryId, // Passiamo l'ID, non l'URL
-        image_uris: null,    // Costringiamo il sistema a usare il link API
+        scryfall_id: scryId, 
+        image_uris: { normal: `https://api.scryfall.com/cards/${scryId}?format=image&version=normal` },
         mana_cost: ""
     };
+
+    // Determina se va nelle creature o negli altri permanenti
     const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
-    document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
-    toggleTokenMenu();
+    const zone = document.getElementById(zoneId);
+    
+    if (zone) {
+        // Usa la stessa funzione che usi per le carte normali (es. createCardUI)
+        zone.appendChild(createCardUI(tokenData, 'field'));
+    }
+    toggleTokenMenu(); // Chiude il menu
 }
 
     function removeFromAll(cardData, from) {
