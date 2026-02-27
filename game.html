@@ -104,9 +104,9 @@
         <h2 style="color:#27ae60; margin-top:0;">Scegli Token</h2>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
             <button class="btn" onclick="addToken('treasure')">💰 Tesoro</button>
-            <button class="btn" onclick="addToken('Elf Warrior')">⚔️ Soldato Elfo 1/1</button>
+            <button class="btn" onclick="addToken('elf')">⚔️ Elfo Guerriero 1/1</button>
             <button class="btn" onclick="addToken('soldier')">⚔️ Soldato 1/1</button>
-            <button class="btn" onclick="addToken('Food')">🍔 Cibo</button>
+            <button class="btn" onclick="addToken('food')">🍔 Cibo</button>
         </div>
         <button class="btn" style="background:#a82331; width:100%" onclick="closeTokenMenu()">Chiudi</button>
     </div>
@@ -245,29 +245,52 @@
         document.getElementById('token-overlay').style.display = 'none';
     }
 
-    function addToken(type) {
-        const tokens = {
-            treasure: { name: "Treasure", type: "Artifact", url: "https://cards.scryfall.io/large/front/b/b/bbe8bced-9524-47f6-a600-bf4ddc072698.jpg?1562539795" },
-            soldier: { name: "Elf Warrior", type: "Creature", url: "https://cards.scryfall.io/normal/front/2/9/29e9326a-a435-44c7-939a-8da6ed3c4510.jpg?1767954990" },
-            beast: { name: "Human Soldier", type: "Creature", url: "https://cards.scryfall.io/normal/front/6/3/631c2c16-132d-4607-ab7e-207a6af188e5.jpg?1757686920" },
-            clue: { name: "Food", type: "Artifact", url: "https://cards.scryfall.io/large/front/e/2/e2b62092-57df-4d95-b2b9-961794e7c20b.jpg?1771590558" }
-        };
-        const data = tokens[type];
-        const tokenData = {
-            name: data.name,
-            type_line: data.type,
-            image_uris: { normal: data.url },
-            scryfall_id: "token-" + Date.now()
-        };
-        const tokenUI = createCardUI(tokenData, 'field');
-        tokenUI.classList.add('token');
-        tokenUI.style.height = "130px";
-        const zone = data.type === "Creature" ? 'field-creatures' : 'field-others';
-        document.getElementById(zone).appendChild(tokenUI);
-        closeTokenMenu();
-        showError(`Creato ${data.name}!`);
-        updateManaTracker();
-    }
+function addToken(type) {
+    const tokens = {
+        treasure: { 
+            name: "Treasure", 
+            type: "Artifact", 
+            url: "https://cards.scryfall.io/large/front/b/b/bbe8bced-9524-47f6-a600-bf4ddc072698.jpg?1562539795" 
+        },
+        elf: { 
+            name: "Elf Warrior", 
+            type: "Creature", 
+            url: "https://cards.scryfall.io/large/front/0/c/0c326a0a-a435-44c7-939a-8da6ed3c4510.jpg?1562639644" 
+        },
+        soldier: { 
+            name: "Soldier", 
+            type: "Creature", 
+            url: "https://cards.scryfall.io/large/front/5/8/58ad9c94-8173-4bd9-a47e-bc438997363e.jpg?1562639803" 
+        },
+        food: { 
+            name: "Food", 
+            type: "Artifact", 
+            url: "https://cards.scryfall.io/large/front/b/f/bf69022d-3031-402a-9993-379e57849e7b.jpg?1572482782" 
+        }
+    };
+
+    const data = tokens[type];
+    if (!data) return; // Sicurezza se il tipo non esiste
+
+    const tokenData = {
+        name: data.name,
+        type_line: data.type,
+        image_uris: { normal: data.url },
+        scryfall_id: "token-" + Date.now()
+    };
+
+    const tokenUI = createCardUI(tokenData, 'field');
+    tokenUI.classList.add('token');
+    tokenUI.style.height = "130px";
+
+    // Manda le creature nella zona giusta e gli artefatti in "others"
+    const zoneId = data.type.includes("Creature") ? 'field-creatures' : 'field-others';
+    document.getElementById(zoneId).appendChild(tokenUI);
+    
+    closeTokenMenu();
+    showError(`Creato ${data.name}!`);
+    updateManaTracker();
+}
     
     window.onload = init;
 </script>
