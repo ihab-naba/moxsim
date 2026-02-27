@@ -85,11 +85,12 @@
 <div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
 <div id="token-menu">
-    <button class="btn-token" onclick="createToken('Soldato', 'Creature', 'https://cards.scryfall.io/normal/front/1/1/11d88275-cf08-4e4b-91b3-4f9e6129881a.jpg')">Soldato 1/1</button>
-    <button class="btn-token" onclick="createToken('Tesoro', 'Artifact', 'https://cards.scryfall.io/normal/front/0/e/0e796062-8495-4676-96b6-3a6a9b44122d.jpg')">Tesoro</button>
-    <button class="btn-token" onclick="createToken('Indizio', 'Artifact', 'https://cards.scryfall.io/normal/front/e/0/e089225-8373-42e1-a080-60f1b5250462.jpg')">Indizio</button>
-    <button class="btn-token" onclick="createToken('Zombie', 'Creature', 'https://cards.scryfall.io/normal/front/2/a/2a4b87e2-8924-406a-93a0-f80879612347.jpg')">Zombie 2/2</button>
-    <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
+    <button class="btn-token" onclick="generateToken('Soldier', 'Creature Token')">Soldato 1/1</button>
+    <button class="btn-token" onclick="generateToken('Treasure', 'Artifact Token')">Tesoro</button>
+    <button class="btn-token" onclick="generateToken('Clue', 'Artifact Token')">Indizio</button>
+    <button class="btn-token" onclick="generateToken('Zombie', 'Creature Token')">Zombie 2/2</button>
+    <button class="btn-token" onclick="generateToken('Spirit', 'Creature Token')">Spirito 1/1</button>
+    <button class="btn-token" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
 </div>
 
 <script>
@@ -214,25 +215,36 @@
         menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
     }
 
-function createToken(name, type, scryId) {
-    // Creiamo un oggetto "finta carta" che il tuo sistema UI può leggere
-    const tokenData = {
-        name: name,
-        type_line: type,
-        scryfall_id: scryId, 
-        image_uris: { normal: `https://api.scryfall.com/cards/${scryId}?format=image&version=normal` },
-        mana_cost: ""
-    };
+async function createToken(tokenName, typeLine) {
+    try {
+        // 1. Cerchiamo l'immagine ufficiale su Scryfall tramite il nome
+        const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${tokenName}+token`);
+        const data = await response.json();
+        
+        const imageUrl = data.image_uris ? data.image_uris.normal : data.card_faces[0].image_uris.normal;
 
-    // Determina se va nelle creature o negli altri permanenti
-    const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
-    const zone = document.getElementById(zoneId);
-    
-    if (zone) {
-        // Usa la stessa funzione che usi per le carte normali (es. createCardUI)
-        zone.appendChild(createCardUI(tokenData, 'field'));
+        // 2. Creiamo l'oggetto carta per il tuo sistema
+        const tokenData = {
+            name: tokenName,
+            type_line: typeLine,
+            image_uris: { normal: imageUrl },
+            isToken: true,
+            scryfall_id: data.id
+        };
+
+        // 3. Lo aggiungiamo al campo (Creature o Altro)
+        const zoneId = typeLine.toLowerCase().includes('creature') ? 'field-creatures' : 'field-others';
+        const zone = document.getElementById(zoneId);
+        
+        // Usa la tua funzione esistente per creare l'elemento HTML della carta
+        const tokenElement = createCardUI(tokenData, 'field');
+        zone.appendChild(tokenElement);
+
+    } catch (error) {
+        console.error("Errore nel recupero del token:", error);
+        alert("Impossibile trovare l'immagine del token su Scryfall.");
     }
-    toggleTokenMenu(); // Chiude il menu
+    toggleTokenMenu();
 }
 
     function removeFromAll(cardData, from) {
