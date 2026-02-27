@@ -34,7 +34,6 @@
         #life-box { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; }
         .life { font-size: 45px; font-weight: bold; line-height: 1; margin: 5px 0; }
         
-        /* MANA TRACKER STYLES */
         #mana-tracker { background: #111; border: 1px solid #333; border-radius: 8px; padding: 10px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 5px; }
         .mana-stat { text-align: center; }
         .mana-val { font-size: 18px; font-weight: bold; color: #fff; }
@@ -50,6 +49,13 @@
         #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; }
         #mulligan-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; flex-direction: column; align-items: center; justify-content: center; }
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+        
+        /* STILE TOKEN AGGIUNTO QUI CORRETTAMENTE */
+        .token { 
+            border: 2px dashed var(--mox-blue) !important; 
+            background: #222 !important; 
+            box-shadow: 0 0 10px rgba(0,123,255,0.3);
+        }
     </style>
 </head>
 <body>
@@ -200,65 +206,40 @@
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
     function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
     function showError(m) { const e = document.getElementById('error-msg'); e.innerText = m; e.style.display = 'block'; setTimeout(() => e.style.display = 'none', 1500); }
-function openScry() {
-    if (deck.length === 0) {
-        showError("Mazzo vuoto!");
-        return;
+    
+    function openScry() {
+        if (deck.length === 0) { showError("Mazzo vuoto!"); return; }
+        const card = deck[deck.length - 1];
+        const overlay = document.getElementById('scry-overlay');
+        const content = document.getElementById('scry-content');
+        overlay.style.display = 'flex';
+        const imgUrl = card.image_uris ? card.image_uris.normal : `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`;
+        content.innerHTML = `<div style="text-align:center; margin-bottom:20px;"><h3 style="color:var(--mox-blue); margin-bottom:10px;">SCRY 1</h3><img src="${imgUrl}" style="height:450px; border-radius:20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #333;"></div>`;
     }
-    const card = deck[deck.length - 1];
-    const overlay = document.getElementById('scry-overlay');
-    const content = document.getElementById('scry-content');
-    
-    // Mostriamo l'overlay
-    overlay.style.display = 'flex';
-    
-    // Recuperiamo l'immagine corretta (gestendo i vari formati Scryfall)
-    const imgUrl = card.image_uris ? card.image_uris.normal : `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`;
-    
-    content.innerHTML = `
-        <div style="text-align:center; margin-bottom:20px;">
-            <h3 style="color:var(--mox-blue); margin-bottom:10px;">SCRY 1</h3>
-            <img src="${imgUrl}" style="height:450px; border-radius:20px; box-shadow: 0 0 30px rgba(0,0,0,0.5); border: 2px solid #333;">
-        </div>
-    `;
-}
 
-function scryAction(pos) {
-    const card = deck.pop();
-    if (pos === 'top') {
-        deck.push(card);
-        showError("Carta rimessa in cima");
-    } else {
-        deck.unshift(card); // La mette in fondo al mazzo
-        showError("Carta messa in fondo");
+    function scryAction(pos) {
+        const card = deck.pop();
+        if (pos === 'top') { deck.push(card); showError("Carta rimessa in cima"); } 
+        else { deck.unshift(card); showError("Carta messa in fondo"); }
+        closeScry(); updateUI();
     }
-    closeScry();
-    updateUI();
-}
+    
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
 
-    .token { 
-    border: 2px dashed var(--mox-blue) !important; 
-    background: #222 !important; 
-    box-shadow: 0 0 10px rgba(0,123,255,0.3);
-}
-  function toggleTokenMenu() {
-    // Creiamo un semplice "Tesoro" come test
-    const treasureData = {
-        name: "Treasure",
-        type_line: "Artifact Token",
-        image_uris: { normal: "https://cards.scryfall.io/normal/front/e/1/e1464663-e354-4342-a6ff-86f30440332e.jpg" },
-        scryfall_id: "token-" + Date.now() // ID univoco per non confonderlo
-    };
-    
-    // Lo mettiamo nella zona "Non-Creatures"
-    const tokenUI = createCardUI(treasureData, 'field');
-    tokenUI.classList.add('token');
-    document.getElementById('field-others').appendChild(tokenUI);
-    
-    showError("Creato Token Tesoro!");
-    updateManaTracker();
-}
+    // FUNZIONE TOKEN SPOSTATA QUI CORRETTAMENTE
+    function toggleTokenMenu() {
+        const treasureData = {
+            name: "Treasure",
+            type_line: "Artifact Token",
+            image_uris: { normal: "https://cards.scryfall.io/normal/front/e/1/e1464663-e354-4342-a6ff-86f30440332e.jpg" },
+            scryfall_id: "token-" + Date.now()
+        };
+        const tokenUI = createCardUI(treasureData, 'field');
+        tokenUI.classList.add('token');
+        document.getElementById('field-others').appendChild(tokenUI);
+        showError("Creato Token Tesoro!");
+        updateManaTracker();
+    }
     
     window.onload = init;
 </script>
