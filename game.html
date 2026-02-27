@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V27 (Color Aware Fixed)</title>
+    <title>MoxSim Arena - Goldfish V28 (Full Fixed)</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -11,14 +11,11 @@
         #board-header { display: flex; align-items: center; padding: 0 5px; height: 35px; gap: 15px; }
         .turn-badge { background: #1a1a1a; border: 1px solid #333; padding: 4px 15px; border-radius: 4px; font-weight: bold; color: var(--mox-blue); font-size: 13px; }
         
-        /* Zone con etichette V27 rimpicciolite */
         .zone { background: var(--panel); border: 1px solid #282828; border-radius: 8px; position: relative; display: flex; align-items: center; padding: 25px 10px 10px; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; }
         .zone.drag-over { border-color: var(--mox-blue); background: #222; }
         .zone::before { content: attr(data-label); position: absolute; top: 6px; left: 12px; font-size: 10px; color: var(--gray); font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; }
         
         #bottom-bar { display: flex; height: 170px; gap: 10px; flex-shrink: 0; }
-        
-        /* Hand Container corretto */
         #hand-container { flex: 2.5; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         #hand { width: 100%; padding: 10px !important; justify-content: center; overflow: visible !important; }
         .pile-label { font-size: 11px; color: #eee; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
@@ -37,17 +34,20 @@
         #life-box { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; }
         .btn-exit { width: 100%; background: #444; border: none; color: #ccc; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 10px; text-transform: uppercase; margin-bottom: 5px; }
         .life { font-size: 55px; text-align: center; font-weight: bold; line-height: 1; margin: 5px 0; }
-        .btn { background: #2a2a2a; border: none; padding: 10px; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; }
+        .btn { background: #2a2a2a; border: none; padding: 10px; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 12px; text-transform: uppercase; }
         .btn-blue { background: var(--mox-blue); }
+        .btn-mulligan { background: #e67e22; }
 
-        /* Commander Zone rinasce */
         #commander-zone { height: 130px; border: 1px solid #282828; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-top: auto; background: #111; position: relative; padding: 5px; }
         #commander-zone::before { content: "COMMANDER"; position: absolute; top: 5px; font-size: 9px; color: #555; font-weight: bold; }
 
         #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; font-size: 14px; }
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 400px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        .btn-token { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; min-width: 100px; }
+        #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 400px; }
+        
+        /* Menu Mulligan Overlay */
+        #mulligan-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 6000; flex-direction: column; align-items: center; justify-content: center; }
+        .mulligan-box { background: #1a1a1a; padding: 30px; border-radius: 15px; border: 2px solid #e67e22; text-align: center; }
     </style>
 </head>
 <body>
@@ -68,7 +68,7 @@
                 <div class="pile-visual sleeve" onclick="drawCard()"></div>
             </div>
             <div class="pile-zone">
-                <div class="pile-label">Graveyard (<span id="count-grave">0</span>)</div>
+                <div class="pile-label">Grave (<span id="count-grave">0</span>)</div>
                 <div class="pile-visual" id="graveyard-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="grave"></div>
             </div>
             <div class="pile-zone">
@@ -83,7 +83,10 @@
             <div class="life" id="life-display">40</div>
         </div>
         <div style="display:flex; gap:8px;"><button class="btn" style="flex:1" onclick="changeLife(-1)">-</button><button class="btn" style="flex:1" onclick="changeLife(1)">+</button></div>
+        
         <button class="btn btn-blue" onclick="nextTurn()">Next Turn</button>
+        <button class="btn btn-mulligan" onclick="openMulliganMenu()">Mulligan</button>
+        
         <button class="btn" style="background:#27ae60" onclick="toggleTokenMenu()">Tokens</button>
         <button class="btn" onclick="openScry()">Scry 1</button>
         <button class="btn" onclick="shuffleDeck()">Shuffle</button>
@@ -95,64 +98,27 @@
 </div>
 
 <div id="error-msg"></div>
-<script>
-    // [Copia qui tutto lo script dell'ultimo messaggio, è già corretto con la logica mana!]
-</script>
-<div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
-<div id="token-menu">
-    <button class="btn-token" onclick="createToken('Soldier', 'Creature', 'https://api.scryfall.com/cards/734277bc-c625-467d-9475-408a28795775?format=image&version=normal')">Soldato 1/1</button>
-    <button class="btn-token" onclick="createToken('Treasure', 'Artifact', 'https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=normal')">Tesoro</button>
-    <button class="btn-token" onclick="createToken('Clue', 'Artifact', 'https://api.scryfall.com/cards/3e089225-8373-42e1-a080-60f1b5250462?format=image&version=normal')">Indizio</button>
-    <button class="btn-token" onclick="createToken('Zombie', 'Creature', 'https://api.scryfall.com/cards/59714392-5036-4074-850d-85208f01b0f2?format=image&version=normal')">Zombie 2/2</button>
-    <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
-</div>
-    
-<div id="mulligan-menu" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:5000; flex-direction:column; align-items:center; justify-content:center;">
-    <div style="background:#e67e22; padding:30px; border-radius:15px; border:2px solid #e67e22; text-align:center;">
-        <h2 style="margin-top:0; color:#e67e22;">MULLIGAN</h2>
+<div id="mulligan-overlay">
+    <div class="mulligan-box">
+        <h2 style="color:#e67e22; margin-top:0;">MULLIGAN</h2>
         <p>Quante carte vuoi pescare?</p>
         <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
-            <button class="btn" style="padding:15px 20px;" onclick="executeMulligan(7)">7</button>
-            <button class="btn" style="padding:15px 20px;" onclick="executeMulligan(6)">6</button>
-            <button class="btn" style="padding:15px 20px;" onclick="executeMulligan(5)">5</button>
+            <button class="btn" style="padding:15px 25px;" onclick="executeMulligan(7)">7</button>
+            <button class="btn" style="padding:15px 25px;" onclick="executeMulligan(6)">6</button>
+            <button class="btn" style="padding:15px 25px;" onclick="executeMulligan(5)">5</button>
         </div>
-        <button class="btn" style="margin-top:20px; background:#444; width:100%;" onclick="closeMulligan()">Annulla</button>
+        <button class="btn" style="margin-top:20px; background:#444; width:100%;" onclick="closeMulliganMenu()">Annulla</button>
     </div>
 </div>
 
-<script>
-    // Sostituisci la vecchia funzione mulligan() con queste due:
+<div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
+<div id="token-menu" style="display:none;">
+    <button class="btn-token" onclick="createToken('Soldier', 'Creature', 'https://api.scryfall.com/cards/734277bc-c625-467d-9475-408a28795775?format=image&version=normal')">Soldato 1/1</button>
+    <button class="btn-token" onclick="createToken('Treasure', 'Artifact', 'https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=normal')">Tesoro</button>
+    <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
+</div>
 
-    function mulligan() {
-        // Mostra il menu di scelta invece del confirm standard
-        document.getElementById('mulligan-menu').style.display = 'flex';
-    }
-
-    function closeMulligan() {
-        document.getElementById('mulligan-menu').style.display = 'none';
-    }
-
-    function executeMulligan(numCards) {
-        // 1. Rimetti la mano nel mazzo
-        deck.push(...hand);
-        hand = [];
-        
-        // 2. Mescola
-        shuffleDeck(false);
-        
-        // 3. Pesca il numero scelto
-        for(let i=0; i < numCards; i++) {
-            if(deck.length > 0) hand.push(deck.pop());
-        }
-        
-        // 4. Chiudi e aggiorna
-        closeMulligan();
-        updateUI();
-        showError(`Mulligan a ${numCards} eseguito!`);
-    }
-</script>
-    
 <script>
     let deck = [], hand = [], grave = [], exile = [];
     let life = 40, turn = 1, draggedCardData = null;
@@ -168,6 +134,7 @@
             const response = await fetch(proxy + target);
             const json = await response.json();
             const data = JSON.parse(json.contents);
+            
             if (data.commanders) {
                 Object.values(data.commanders).forEach(c => {
                     if(c.card) document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander'));
@@ -179,16 +146,31 @@
                     for (let i = 0; i < info.quantity; i++) { deck.push(info.card); }
                 });
             }
-            shuffleDeck();
+            shuffleDeck(false);
+            // PESCA INIZIALE DI 7
             for(let i=0; i<7; i++) { if(deck.length > 0) hand.push(deck.pop()); }
             updateUI();
         } catch (err) { console.error("Errore mazzo", err); }
     }
 
+    // LOGICA MULLIGAN
+    function openMulliganMenu() { document.getElementById('mulligan-overlay').style.display = 'flex'; }
+    function closeMulliganMenu() { document.getElementById('mulligan-overlay').style.display = 'none'; }
+    
+    function executeMulligan(num) {
+        deck.push(...hand);
+        hand = [];
+        shuffleDeck(false);
+        for(let i=0; i<num; i++) { if(deck.length > 0) hand.push(deck.pop()); }
+        closeMulliganMenu();
+        updateUI();
+        showError(`Mulligan a ${num} eseguito!`);
+    }
+
+    // MANA E GIOCO
     function getManaDetails(manaCost) {
         if (!manaCost) return { generic: 0, colors: [] };
-        const colors = [];
-        let generic = 0;
+        const colors = []; let generic = 0;
         const matches = manaCost.match(/\{(.+?)\}/g) || [];
         matches.forEach(m => {
             const symbol = m.replace('{', '').replace('}', '');
@@ -211,13 +193,11 @@
     function playCard(cardData, from) {
         const type = (cardData.type_line || "").toLowerCase();
         const isLand = type.includes('land');
-
         if (!isLand) {
             const cost = getManaDetails(cardData.mana_cost);
             const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
             let landsToTap = [];
             let tempUntapped = [...untappedLands];
-
             for (let neededColor of cost.colors) {
                 const index = tempUntapped.findIndex(l => getProducedMana(JSON.parse(l.dataset.cardData)).includes(neededColor));
                 if (index === -1) { showError("Manca mana: " + neededColor); return; }
@@ -225,24 +205,12 @@
             }
             if (tempUntapped.length < cost.generic) { showError("Mana insufficiente!"); return; }
             for (let i = 0; i < cost.generic; i++) landsToTap.push(tempUntapped.splice(0, 1)[0]);
-            
             landsToTap.forEach(l => l.classList.add('tapped'));
         }
-
         if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
-        const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
-        document.querySelectorAll(selector).forEach(c => {
-            if(JSON.parse(c.dataset.cardData).scryfall_id === cardData.scryfall_id) c.remove();
-        });
         const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
         updateUI();
-    }
-
-    function showError(msg) {
-        const el = document.getElementById('error-msg');
-        el.innerText = msg; el.style.display = 'block';
-        setTimeout(() => el.style.display = 'none', 1500);
     }
 
     function createCardUI(cardData, location) {
@@ -255,46 +223,11 @@
         img.onclick = () => {
             const parent = img.parentElement?.id || "";
             if (parent === 'hand' || parent === 'commander-zone') playCard(cardData, parent);
-            else if (img.parentElement.classList.contains('zone')) img.classList.toggle('tapped');
+            else img.classList.toggle('tapped');
         };
-        img.ondragstart = (e) => { draggedCardData = cardData; setTimeout(() => img.style.opacity = "0.3", 0); };
-        img.ondragend = () => { img.style.opacity = "1"; document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); };
+        img.ondragstart = (e) => { draggedCardData = cardData; };
+        img.ondragend = () => { document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); };
         return img;
-    }
-
-    function toggleTokenMenu() {
-        const menu = document.getElementById('token-menu');
-        menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
-    }
-
-    function createToken(name, type, imgUrl) {
-        const tokenData = { name, type_line: type, scryfall_id: 'tk-' + Date.now(), image_uris: { normal: imgUrl }, mana_cost: "" };
-        const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
-        document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
-        toggleTokenMenu();
-    }
-
-    function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-    function drop(e) {
-        e.preventDefault();
-        const zone = e.currentTarget;
-        zone.classList.remove('drag-over');
-        if (!draggedCardData) return;
-        
-        // Rimuovi da ovunque sia
-        document.querySelectorAll('.card').forEach(c => {
-            if(JSON.parse(c.dataset.cardData).scryfall_id === draggedCardData.scryfall_id) c.remove();
-        });
-        hand = hand.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
-        grave = grave.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
-        exile = exile.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
-
-        if (zone.dataset.zone === 'grave') grave.push(draggedCardData);
-        else if (zone.dataset.zone === 'exile') exile.push(draggedCardData);
-        else if (zone.id === 'hand') hand.push(draggedCardData);
-        else zone.appendChild(createCardUI(draggedCardData, 'field'));
-        updateUI();
     }
 
     function updateUI() {
@@ -309,17 +242,39 @@
         document.getElementById('count-lib').innerText = deck.length;
         document.getElementById('count-grave').innerText = grave.length;
         document.getElementById('count-exile').innerText = exile.length;
-        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris?.normal || ''}" style="width:100%">` : '';
+        document.getElementById('graveyard-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris?.normal || ''}" style="width:100%">` : '';
         document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris?.normal || ''}" style="width:100%">` : '';
     }
 
+    function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function drop(e) {
+        e.preventDefault();
+        const zone = e.currentTarget;
+        zone.classList.remove('drag-over');
+        if (!draggedCardData) return;
+        document.querySelectorAll('.card').forEach(c => { if(JSON.parse(c.dataset.cardData).scryfall_id === draggedCardData.scryfall_id) c.remove(); });
+        hand = hand.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+        grave = grave.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+        exile = exile.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+        if (zone.dataset.zone === 'grave') grave.push(draggedCardData);
+        else if (zone.dataset.zone === 'exile') exile.push(draggedCardData);
+        else if (zone.id === 'hand') hand.push(draggedCardData);
+        else zone.appendChild(createCardUI(draggedCardData, 'field'));
+        updateUI();
+    }
+
+    function shuffleDeck(refresh = true) { for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } if(refresh) updateUI(); }
+    function drawCard() { if (deck.length > 0) { hand.push(deck.pop()); updateUI(); } }
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
-    function openScry() { if (deck.length === 0) return; const card = deck[deck.length - 1]; document.getElementById('scry-overlay').style.display = 'flex'; document.getElementById('scry-content').innerHTML = `<img src="https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal" style="height:350px; border-radius:15px">`; }
+    function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
+    function showError(msg) { const el = document.getElementById('error-msg'); el.innerText = msg; el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 1500); }
+    function toggleTokenMenu() { const menu = document.getElementById('token-menu'); menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex'; }
+    function createToken(name, type, imgUrl) { const tokenData = { name, type_line: type, scryfall_id: 'tk-' + Date.now(), image_uris: { normal: imgUrl }, mana_cost: "" }; const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others'; document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field')); toggleTokenMenu(); }
+    function openScry() { if (deck.length === 0) return; const card = deck[deck.length - 1]; document.getElementById('scry-overlay').style.display = 'flex'; document.getElementById('scry-content').innerHTML = `<img src="${card.image_uris.normal}" style="height:350px; border-radius:15px">`; }
     function scryAction(pos) { const card = deck.pop(); if (pos === 'top') deck.push(card); else deck.unshift(card); closeScry(); updateUI(); }
     function closeScry() { document.getElementById('scry-overlay').style.display = 'none'; }
-    function changeLife(v) { life += v; document.getElementById('life-display').innerText = life; }
-    function drawCard() { if (deck.length > 0) { hand.push(deck.pop()); updateUI(); } }
-    function shuffleDeck() { for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; } updateUI(); }
+
     window.onload = init;
 </script>
 </body>
