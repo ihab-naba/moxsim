@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>MoxSim Arena - Goldfish V27 (Token Update)</title>
+    <title>MoxSim Arena - Goldfish V27 (Color Aware)</title>
     <style>
         :root { --mox-blue: #007bff; --bg: #0b0b0b; --panel: #161616; --gray: #aaa; --sleeve-color: #1abc9c; }
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
@@ -10,36 +10,40 @@
         #board { display: flex; flex-direction: column; gap: 10px; }
         #board-header { display: flex; align-items: center; padding: 0 5px; height: 35px; gap: 15px; }
         .turn-badge { background: #1a1a1a; border: 1px solid #333; padding: 4px 15px; border-radius: 4px; font-weight: bold; color: var(--mox-blue); font-size: 13px; }
+        
+        /* Zone con etichette V27 */
         .zone { background: var(--panel); border: 1px solid #282828; border-radius: 8px; position: relative; display: flex; align-items: center; padding: 30px 10px 10px; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; }
         .zone.drag-over { border-color: var(--mox-blue); background: #222; }
         .zone::before { content: attr(data-label); position: absolute; top: 8px; left: 12px; font-size: 11px; color: var(--gray); font-weight: bold; text-transform: uppercase; }
+        
         #bottom-bar { display: flex; height: 180px; gap: 10px; flex-shrink: 0; }
-        #hand { flex: 2.5; justify-content: center; overflow: visible !important; display: flex; align-items: center; }
+        
+        /* Hand con etichetta esterna stile pile */
+        #hand-container { flex: 2.5; display: flex; flex-direction: column; align-items: center; }
+        #hand { width: 100%; padding-top: 10px !important; justify-content: center; overflow: visible !important; }
+        #hand::before { display: none; }
+
         .pile-zone { flex: 0.6; display: flex; flex-direction: column; align-items: center; }
-        .pile-label { font-size: 12px; margin-bottom: 5px; color: #eee; font-weight: bold; }
+        .pile-label { font-size: 12px; margin-bottom: 5px; color: #eee; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
         .pile-visual { width: 85px; height: 118px; border-radius: 8px; border: 1px solid #333; background: #000; position: relative; cursor: pointer; overflow: hidden; display: flex; align-items: center; justify-content: center; }
         .sleeve { background: var(--sleeve-color); border: 2px solid #fff; }
+        
         .card { height: 130px; border-radius: 8px; cursor: grab; flex-shrink: 0; transition: transform 0.2s; user-select: none; position: relative; }
         .card:active { cursor: grabbing; z-index: 5000; }
         .hand-card { margin-right: -50px; }
         .hand-card:hover { transform: translateY(-70px) scale(2.2); z-index: 1000 !important; margin: 0 40px; }
         .tapped { transform: rotate(90deg); margin: 0 35px; filter: brightness(0.6); }
+        
         #sidebar { border-left: 1px solid #222; padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #0c0c0c; }
         #life-box { background: #1a1a1a; padding: 10px; border-radius: 8px; border: 1px solid #333; display: flex; flex-direction: column; align-items: center; }
         .btn-exit { width: 100%; background: #444; border: none; color: #ccc; padding: 4px; border-radius: 4px; cursor: pointer; font-size: 10px; text-transform: uppercase; margin-bottom: 5px; }
-        .btn-exit:hover { background: #666; color: white; }
         .life { font-size: 60px; text-align: center; font-weight: bold; line-height: 1; margin: 5px 0; }
         .btn { background: #2a2a2a; border: none; padding: 12px; border-radius: 6px; color: white; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 13px; }
         .btn-blue { background: var(--mox-blue); }
-        #commander-zone { height: 140px; border: 1px solid #222; border-radius: 8px; display: flex; justify-content: center; align-items: center; margin-top: auto; background: #111; position: relative; }
-        #commander-zone::before { content: "COMMANDER"; position: absolute; top: 5px; font-size: 9px; color: #555; }
         #error-msg { position: fixed; bottom: 200px; left: 50%; transform: translateX(-50%); background: rgba(209, 19, 38, 0.9); padding: 10px 20px; border-radius: 5px; display: none; z-index: 3000; }
         #scry-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
-
-        /* Stile per il menu dei Token */
         #token-menu { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 20px; border-radius: 12px; border: 2px solid var(--mox-blue); z-index: 4000; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 400px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
         .btn-token { background: #333; border: 1px solid #444; color: white; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 12px; transition: 0.2s; min-width: 100px; }
-        .btn-token:hover { background: var(--mox-blue); }
     </style>
 </head>
 <body>
@@ -51,13 +55,16 @@
         <div class="zone" data-label="Non-Creatures" id="field-others" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
         <div class="zone" data-label="Lands" id="field-lands" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
         <div id="bottom-bar">
-            <div class="zone" data-label="Hand" id="hand" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
+            <div id="hand-container">
+                <div class="pile-label">Hand</div>
+                <div class="zone" id="hand" ondragover="allowDrop(event)" ondrop="drop(event)" ondragleave="dragLeave(event)"></div>
+            </div>
             <div class="pile-zone">
                 <div class="pile-label">Library (<span id="count-lib">0</span>)</div>
                 <div class="pile-visual sleeve" onclick="drawCard()"></div>
             </div>
             <div class="pile-zone">
-                <div class="pile-label">Graveyard (<span id="count-grave">0</span>)</div>
+                <div class="pile-label">Grave (<span id="count-grave">0</span>)</div>
                 <div class="pile-visual" id="grave-visual" ondragover="allowDrop(event)" ondrop="drop(event)" data-zone="grave"></div>
             </div>
             <div class="pile-zone">
@@ -68,7 +75,7 @@
     </div>
     <div id="sidebar">
         <div id="life-box">
-            <button class="btn-exit" onclick="window.location.href='index.html'">Esci / Home</button>
+            <button class="btn-exit" onclick="window.location.href='index.html'">Esci</button>
             <div class="life" id="life-display">40</div>
         </div>
         <div style="display:flex; gap:8px;"><button class="btn" style="flex:1" onclick="changeLife(-1)">-</button><button class="btn" style="flex:1" onclick="changeLife(1)">+</button></div>
@@ -82,7 +89,7 @@
     </div>
 </div>
 
-<div id="error-msg">Mana Insufficiente!</div>
+<div id="error-msg"></div>
 <div id="scry-overlay"><div id="scry-content"></div><div style="display:flex; gap:15px; margin-top:20px"><button class="btn btn-blue" onclick="scryAction('top')">Sopra</button><button class="btn" onclick="scryAction('bottom')">Sotto</button><button class="btn" style="background:#a82331" onclick="closeScry()">Chiudi</button></div></div>
 
 <div id="token-menu">
@@ -90,7 +97,6 @@
     <button class="btn-token" onclick="createToken('Treasure', 'Artifact', 'https://api.scryfall.com/cards/1162804b-f2c9-4a9f-8671-6ca23737da30?format=image&version=normal')">Tesoro</button>
     <button class="btn-token" onclick="createToken('Clue', 'Artifact', 'https://api.scryfall.com/cards/3e089225-8373-42e1-a080-60f1b5250462?format=image&version=normal')">Indizio</button>
     <button class="btn-token" onclick="createToken('Zombie', 'Creature', 'https://api.scryfall.com/cards/59714392-5036-4074-850d-85208f01b0f2?format=image&version=normal')">Zombie 2/2</button>
-    <button class="btn-token" onclick="createToken('Spirit', 'Creature', 'https://api.scryfall.com/cards/8330d31e-451e-450a-85bc-227096739023?format=image&version=normal')">Spirito 1/1</button>
     <button class="btn" style="width:100%; margin-top:10px;" onclick="toggleTokenMenu()">Chiudi</button>
 </div>
 
@@ -126,90 +132,66 @@
         } catch (err) { console.error("Errore mazzo", err); }
     }
 
-    // Estrae i colori richiesti: {1}{W}{B} -> { generic: 1, colors: ['W', 'B'] }
-function getManaDetails(manaCost) {
-    if (!manaCost) return { generic: 0, colors: [] };
-    const colors = [];
-    let generic = 0;
-    const matches = manaCost.match(/\{(.+?)\}/g) || [];
-    
-    matches.forEach(m => {
-        const symbol = m.replace('{', '').replace('}', '');
-        if (!isNaN(symbol)) {
-            generic += parseInt(symbol);
-        } else {
-            // Gestisce W, U, B, R, G (ignora simboli strani per ora)
-            colors.push(symbol.toUpperCase());
-        }
-    });
-    return { generic, colors };
-}
-
-// Capisce che colori produce una terra
-function getProducedMana(cardData) {
-    // Se è una terra base o ha color_identity
-    if (cardData.type_line.includes("Island")) return ["U"];
-    if (cardData.type_line.includes("Plains")) return ["W"];
-    if (cardData.type_line.includes("Swamp")) return ["B"];
-    if (cardData.type_line.includes("Mountain")) return ["R"];
-    if (cardData.type_line.includes("Forest")) return ["G"];
-    return cardData.color_identity || []; // Per le terre doppie/multicolore
-}
-
-function playCard(cardData, from) {
-    const type = (cardData.type_line || "").toLowerCase();
-    const isLand = type.includes('land');
-
-    if (!isLand) {
-        const cost = getManaDetails(cardData.mana_cost);
-        const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
-        let landsToTap = [];
-        let tempUntapped = [...untappedLands];
-
-        // 1. Tappa i colori specifici
-        for (let neededColor of cost.colors) {
-            const index = tempUntapped.findIndex(l => {
-                const data = JSON.parse(l.dataset.cardData);
-                return getProducedMana(data).includes(neededColor);
-            });
-
-            if (index === -1) {
-                showError("Manca mana colore: " + neededColor);
-                return;
-            }
-            landsToTap.push(tempUntapped.splice(index, 1)[0]);
-        }
-
-        // 2. Tappa il mana generico
-        if (tempUntapped.length < cost.generic) {
-            showError("Mana insufficiente!");
-            return;
-        }
-        for (let i = 0; i < cost.generic; i++) {
-            landsToTap.push(tempUntapped.splice(0, 1)[0]);
-        }
-
-        // Esegui il tap visivo
-        landsToTap.forEach(l => l.classList.add('tapped'));
+    function getManaDetails(manaCost) {
+        if (!manaCost) return { generic: 0, colors: [] };
+        const colors = [];
+        let generic = 0;
+        const matches = manaCost.match(/\{(.+?)\}/g) || [];
+        matches.forEach(m => {
+            const symbol = m.replace('{', '').replace('}', '');
+            if (!isNaN(symbol)) generic += parseInt(symbol);
+            else colors.push(symbol.toUpperCase());
+        });
+        return { generic, colors };
     }
 
-    // --- Logica di spostamento carta (invariata) ---
-    if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
-    const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
-    document.querySelectorAll(selector).forEach(c => {
-        if(JSON.parse(c.dataset.cardData).scryfall_id === cardData.scryfall_id) c.remove();
-    });
-    const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-    document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
-    updateUI();
-}
+    function getProducedMana(cardData) {
+        const tl = cardData.type_line || "";
+        if (tl.includes("Island")) return ["U"];
+        if (tl.includes("Plains")) return ["W"];
+        if (tl.includes("Swamp")) return ["B"];
+        if (tl.includes("Mountain")) return ["R"];
+        if (tl.includes("Forest")) return ["G"];
+        return cardData.color_identity || [];
+    }
 
-function showError(msg) {
-    const el = document.getElementById('error-msg');
-    el.innerText = msg;
-    el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 2000);
-}
+    function playCard(cardData, from) {
+        const type = (cardData.type_line || "").toLowerCase();
+        const isLand = type.includes('land');
+
+        if (!isLand) {
+            const cost = getManaDetails(cardData.mana_cost);
+            const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
+            let landsToTap = [];
+            let tempUntapped = [...untappedLands];
+
+            for (let neededColor of cost.colors) {
+                const index = tempUntapped.findIndex(l => getProducedMana(JSON.parse(l.dataset.cardData)).includes(neededColor));
+                if (index === -1) { showError("Manca mana: " + neededColor); return; }
+                landsToTap.push(tempUntapped.splice(index, 1)[0]);
+            }
+            if (tempUntapped.length < cost.generic) { showError("Mana insufficiente!"); return; }
+            for (let i = 0; i < cost.generic; i++) landsToTap.push(tempUntapped.splice(0, 1)[0]);
+            
+            landsToTap.forEach(l => l.classList.add('tapped'));
+        }
+
+        if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
+        const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
+        document.querySelectorAll(selector).forEach(c => {
+            if(JSON.parse(c.dataset.cardData).scryfall_id === cardData.scryfall_id) c.remove();
+        });
+        const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
+        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
+        updateUI();
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('error-msg');
+        el.innerText = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 1500);
+    }
+
     function createCardUI(cardData, location) {
         if (!cardData || !cardData.scryfall_id) return document.createElement('div');
         const img = document.createElement('img');
@@ -218,43 +200,13 @@ function showError(msg) {
         img.draggable = true;
         img.dataset.cardData = JSON.stringify(cardData);
         img.onclick = () => {
-            const parent = img.parentElement ? img.parentElement.id : "";
-            if (parent === 'hand' || parent === 'commander-zone') {
-                playCard(cardData, parent === 'hand' ? 'hand' : 'commander');
-            } else if (parent.includes('field')) {
-                img.classList.toggle('tapped');
-            }
+            const parent = img.parentElement?.id || "";
+            if (parent === 'hand' || parent === 'commander-zone') playCard(cardData, parent);
+            else if (img.parentElement.classList.contains('zone')) img.classList.toggle('tapped');
         };
-        img.ondragstart = (e) => { draggedCardData = cardData; e.dataTransfer.setData("text/plain", cardData.scryfall_id); setTimeout(() => img.style.opacity = "0.3", 0); };
+        img.ondragstart = (e) => { draggedCardData = cardData; setTimeout(() => img.style.opacity = "0.3", 0); };
         img.ondragend = () => { img.style.opacity = "1"; document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over')); };
         return img;
-    }
-
-    function playCard(cardData, from) {
-        const type = (cardData.type_line || "").toLowerCase();
-        const isLand = type.includes('land');
-        if (!isLand) {
-            const cost = calculateCMC(cardData.mana_cost);
-            const untappedLands = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
-            if (untappedLands.length < cost) {
-                const msg = document.getElementById('error-msg');
-                msg.style.display = 'block';
-                setTimeout(() => msg.style.display = 'none', 1500);
-                return;
-            }
-            for (let i = 0; i < cost; i++) { untappedLands[i].classList.add('tapped'); }
-        }
-        if (from === 'hand') {
-            hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
-        }
-        const selector = from === 'hand' ? '#hand .card' : '#commander-zone .card';
-        document.querySelectorAll(selector).forEach(c => {
-            const data = JSON.parse(c.dataset.cardData || "{}");
-            if(data.scryfall_id === cardData.scryfall_id) c.remove();
-        });
-        const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
-        document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
-        updateUI();
     }
 
     function toggleTokenMenu() {
@@ -263,26 +215,10 @@ function showError(msg) {
     }
 
     function createToken(name, type, imgUrl) {
-        const tokenData = {
-            name: name,
-            type_line: type,
-            scryfall_id: 'token-' + Date.now(),
-            image_uris: { normal: imgUrl },
-            mana_cost: ""
-        };
+        const tokenData = { name, type_line: type, scryfall_id: 'tk-' + Date.now(), image_uris: { normal: imgUrl }, mana_cost: "" };
         const zoneId = type.includes('Creature') ? 'field-creatures' : 'field-others';
         document.getElementById(zoneId).appendChild(createCardUI(tokenData, 'field'));
         toggleTokenMenu();
-    }
-
-    function removeFromAll(cardData, from) {
-        if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
-        document.querySelectorAll('.card').forEach(c => {
-            const data = JSON.parse(c.dataset.cardData || "{}");
-            if(data.scryfall_id === cardData.scryfall_id && (c.parentElement.id === from || c.parentElement.classList.contains('zone'))) {
-                c.remove();
-            }
-        });
     }
 
     function allowDrop(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
@@ -292,13 +228,19 @@ function showError(msg) {
         const zone = e.currentTarget;
         zone.classList.remove('drag-over');
         if (!draggedCardData) return;
-        const from = document.querySelector(`img[src*="${draggedCardData.scryfall_id}"]`)?.parentElement?.id || 'hand';
-        removeFromAll(draggedCardData, from);
-        const targetZone = zone.dataset.zone;
-        if (targetZone === 'grave') grave.push(draggedCardData);
-        else if (targetZone === 'exile') exile.push(draggedCardData);
+        
+        // Rimuovi da ovunque sia
+        document.querySelectorAll('.card').forEach(c => {
+            if(JSON.parse(c.dataset.cardData).scryfall_id === draggedCardData.scryfall_id) c.remove();
+        });
+        hand = hand.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+        grave = grave.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+        exile = exile.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
+
+        if (zone.dataset.zone === 'grave') grave.push(draggedCardData);
+        else if (zone.dataset.zone === 'exile') exile.push(draggedCardData);
         else if (zone.id === 'hand') hand.push(draggedCardData);
-        else { zone.appendChild(createCardUI(draggedCardData, 'field')); }
+        else zone.appendChild(createCardUI(draggedCardData, 'field'));
         updateUI();
     }
 
@@ -314,8 +256,8 @@ function showError(msg) {
         document.getElementById('count-lib').innerText = deck.length;
         document.getElementById('count-grave').innerText = grave.length;
         document.getElementById('count-exile').innerText = exile.length;
-        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris ? grave[grave.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+grave[grave.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
-        document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris ? exile[exile.length-1].image_uris.normal : 'https://api.scryfall.com/cards/'+exile[exile.length-1].scryfall_id+'?format=image&version=small'}" style="width:100%">` : '';
+        document.getElementById('grave-visual').innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris?.normal || ''}" style="width:100%">` : '';
+        document.getElementById('exile-visual').innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris?.normal || ''}" style="width:100%">` : '';
     }
 
     function nextTurn() { turn++; document.getElementById('turn-display').innerText = `Turno ${turn}`; document.querySelectorAll('.card.tapped').forEach(c => c.classList.remove('tapped')); drawCard(); }
