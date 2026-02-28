@@ -172,40 +172,96 @@
             updateUI();
         } catch (err) { console.error("Errore init:", err); }
     }
+    
+<script>
+    // ... qui ci sono le tue variabili (deck, hand, ecc.) e la funzione init() ...
+
+    // ==========================================
+    // SEZIONE TOKEN (INCOLLA QUI LE NUOVE FUNZIONI)
+    // ==========================================
+
+    async function searchAndAddToken() {
+        const query = document.getElementById('token-search').value.trim();
+        if (!query) return;
+        
+        showError("Cerco token...");
+        try {
+            const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(query)}+t:token`);
+            const card = await response.json();
+
+            if (card.status === 404) {
+                showError("Token non trovato!");
+                return;
+            }
+
+            const tokenData = {
+                name: card.name,
+                type_line: card.type_line,
+                image_uris: { normal: card.image_uris?.normal || card.image_uris?.large },
+                scryfall_id: "token-" + Date.now()
+            };
+
+            spawnTokenUI(tokenData);
+            document.getElementById('token-search').value = ''; 
+        } catch (err) {
+            showError("Errore di connessione a Scryfall");
+        }
+    }
+
+    function spawnTokenUI(tokenData) {
+        const tokenUI = createCardUI(tokenData, 'field');
+        tokenUI.classList.add('token');
+        
+        const isCreature = tokenData.type_line.toLowerCase().includes("creature");
+        const zoneId = isCreature ? 'field-creatures' : 'field-others';
+        
+        document.getElementById(zoneId).appendChild(tokenUI);
+        showError(`Creato ${tokenData.name}`);
+        updateManaTracker();
+        closeTokenMenu();
+    }
+
+    function addToken(key) {
+        const data = currentDeckTokens[key];
+        if (data) {
+            spawnTokenUI({
+                name: data.name,
+                type_line: data.type,
+                image_uris: { normal: data.url },
+                scryfall_id: "token-" + Date.now()
+            });
+        }
+    }
 
     function updateTokenMenuUI() {
-        const container = document.getElementById('token-buttons-container');
+        const container = document.getElementById('dynamic-token-list');
+        if (!container) return; // Sicurezza
         container.innerHTML = '';
-        Object.keys(currentDeckTokens).forEach(key => {
+        
+        const keys = Object.keys(currentDeckTokens);
+        if (keys.length === 0) {
+            container.innerHTML = '<p style="grid-column:1/3; color:#555; font-size:10px;">Usa la ricerca sopra per generare token</p>';
+            return;
+        }
+
+        keys.forEach(key => {
             const t = currentDeckTokens[key];
             const btn = document.createElement('button');
             btn.className = 'btn';
+            btn.style.fontSize = '10px';
             btn.innerHTML = t.name;
             btn.onclick = () => addToken(key);
             container.appendChild(btn);
         });
     }
 
-    function addToken(key) {
-        const data = currentDeckTokens[key];
-        if (!data) return;
+    function toggleTokenMenu() { 
+        document.getElementById('token-overlay').style.display = 'flex'; 
+        updateTokenMenuUI(); // Aggiorna la lista ogni volta che apri
+    }
 
-        const tokenData = {
-            name: data.name,
-            type_line: data.type,
-            image_uris: { normal: data.url },
-            scryfall_id: "token-" + Date.now()
-        };
-
-        const tokenUI = createCardUI(tokenData, 'field');
-        tokenUI.classList.add('token');
-        
-        const zoneId = data.type.includes("Creature") ? 'field-creatures' : 'field-others';
-        document.getElementById(zoneId).appendChild(tokenUI);
-        
-        closeTokenMenu();
-        showError(`Creato ${data.name}`);
-        updateManaTracker();
+    function closeTokenMenu() { 
+        document.getElementById('token-overlay').style.display = 'none'; 
     }
 
     function createCardUI(cardData, loc) {
