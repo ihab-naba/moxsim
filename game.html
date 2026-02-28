@@ -102,10 +102,20 @@
 </div>
 
 <div id="token-overlay">
-    <div style="background:#1a1a1a; padding:25px; border-radius:15px; border:2px solid #27ae60; text-align:center; min-width:300px;">
-        <h2 style="color:#27ae60; margin-top:0;">Tokens del Mazzo</h2>
+    <div style="background:#1a1a1a; padding:25px; border-radius:15px; border:2px solid #27ae60; text-align:center; min-width:320px;">
+        <h2 style="color:#27ae60; margin-top:0;">Generatore Token</h2>
+        
+        <div style="display:flex; gap:5px; margin-bottom:15px;">
+            <input type="text" id="token-search" placeholder="Es: Treasure, Elf, Zombie..." style="flex:1; padding:8px; border-radius:4px; border:1px solid #333; background:#000; color:white;">
+            <button class="btn btn-blue" onclick="searchAndAddToken()">Crea</button>
+        </div>
+
         <div id="token-buttons-container">
-            </div>
+            <p style="font-size:11px; color:#666; margin-bottom:10px;">Token suggeriti per questo mazzo:</p>
+            <div id="dynamic-token-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:200px; overflow-y:auto;">
+                </div>
+        </div>
+
         <button class="btn" style="background:#a82331; width:100%; margin-top:20px;" onclick="closeTokenMenu()">Chiudi</button>
     </div>
 </div>
