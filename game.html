@@ -8,7 +8,13 @@
         body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; overflow: hidden; }
         #arena { display: grid; grid-template-columns: 1fr 280px; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
         #board { display: flex; flex-direction: column; gap: 10px; }
-        #board-header { display: flex; align-items: center; padding: 0 5px; height: 35px; gap: 15px; }
+        
+        /* Header con tasto Home */
+        #board-header { display: flex; align-items: center; justify-content: space-between; padding: 0 5px; height: 35px; }
+        .header-left { display: flex; gap: 15px; align-items: center; }
+        .btn-home { background: #333; color: white; border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 16px; transition: 0.2s; display: flex; align-items: center; justify-content: center; }
+        .btn-home:hover { background: var(--mox-blue); transform: scale(1.05); }
+
         .turn-badge { background: #1a1a1a; border: 1px solid #333; padding: 4px 15px; border-radius: 4px; font-weight: bold; color: var(--mox-blue); font-size: 13px; }
         
         .zone { background: var(--panel); border: 1px solid #282828; border-radius: 8px; position: relative; display: flex; align-items: center; padding: 25px 10px 10px; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; }
@@ -50,11 +56,7 @@
         
         .token { border: 2px dashed var(--mox-blue) !important; box-shadow: 0 0 10px rgba(0,123,255,0.3); }
         
-        /* Layout Griglia per i bottoni dei token */
         #token-buttons-container { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 10px; 
             margin-top: 15px; 
             max-height: 300px; 
             overflow-y: auto; 
@@ -66,7 +68,12 @@
 
 <div id="arena">
     <div id="board">
-        <div id="board-header"><div class="turn-badge" id="turn-display">Turno 1</div></div>
+        <div id="board-header">
+            <div class="header-left">
+                <div class="turn-badge" id="turn-display">Turno 1</div>
+            </div>
+            <a href="index.html" class="btn-home" title="Torna alla Selezione Mazzo">🏠</a>
+        </div>
         <div class="zone" data-label="Creatures" id="field-creatures" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
         <div class="zone" data-label="Non-Creatures" id="field-others" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
         <div class="zone" data-label="Lands" id="field-lands" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
@@ -104,18 +111,14 @@
 <div id="token-overlay">
     <div style="background:#1a1a1a; padding:25px; border-radius:15px; border:2px solid #27ae60; text-align:center; min-width:320px;">
         <h2 style="color:#27ae60; margin-top:0;">Generatore Token</h2>
-        
         <div style="display:flex; gap:5px; margin-bottom:15px;">
             <input type="text" id="token-search" placeholder="Es: Treasure, Elf, Zombie..." style="flex:1; padding:8px; border-radius:4px; border:1px solid #333; background:#000; color:white;">
             <button class="btn btn-blue" onclick="searchAndAddToken()">Crea</button>
         </div>
-
         <div id="token-buttons-container">
-            <p style="font-size:11px; color:#666; margin-bottom:10px;">Token suggeriti per questo mazzo:</p>
-            <div id="dynamic-token-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:200px; overflow-y:auto;">
-                </div>
+            <p style="font-size:11px; color:#666; margin-bottom:10px;">Token suggeriti:</p>
+            <div id="dynamic-token-list" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:200px; overflow-y:auto;"></div>
         </div>
-
         <button class="btn" style="background:#a82331; width:100%; margin-top:20px;" onclick="closeTokenMenu()">Chiudi</button>
     </div>
 </div>
@@ -127,7 +130,7 @@
 <script>
     let deck = [], hand = [], grave = [], exile = [], life = 40, turn = 1;
     let draggedCardData = null;
-    let currentDeckTokens = {}; // Memoria per i token estratti da Moxfield
+    let currentDeckTokens = {};
 
     async function init() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -138,14 +141,12 @@
             const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(`https://api.moxfield.com/v2/decks/all/${deckId}`));
             const data = JSON.parse((await res.json()).contents);
             
-            // 1. Caricamento Commander
             if (data.commanders) {
                 Object.values(data.commanders).forEach(c => { 
                     if(c.card) document.getElementById('commander-zone').appendChild(createCardUI(c.card, 'commander')); 
                 });
             }
 
-            // 2. Caricamento Mainboard
             deck = [];
             if (data.mainboard) {
                 Object.values(data.mainboard).forEach(info => { 
@@ -153,7 +154,6 @@
                 });
             }
 
-            // 3. Estrazione Token Dinamici
             currentDeckTokens = {};
             if (data.allTokens) {
                 data.allTokens.forEach(t => {
@@ -164,7 +164,6 @@
                         url: t.image_uris?.normal || t.image_uris?.large
                     };
                 });
-                updateTokenMenuUI();
             }
 
             shuffleDeck(false);
@@ -172,42 +171,30 @@
             updateUI();
         } catch (err) { console.error("Errore init:", err); }
     }
-    
+
     async function searchAndAddToken() {
         const query = document.getElementById('token-search').value.trim();
         if (!query) return;
-        
         showError("Cerco token...");
         try {
             const response = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(query)}+t:token`);
             const card = await response.json();
-
-            if (card.status === 404) {
-                showError("Token non trovato!");
-                return;
-            }
-
-            const tokenData = {
+            if (card.status === 404) { showError("Token non trovato!"); return; }
+            spawnTokenUI({
                 name: card.name,
                 type_line: card.type_line,
                 image_uris: { normal: card.image_uris?.normal || card.image_uris?.large },
                 scryfall_id: "token-" + Date.now()
-            };
-
-            spawnTokenUI(tokenData);
+            });
             document.getElementById('token-search').value = ''; 
-        } catch (err) {
-            showError("Errore di connessione a Scryfall");
-        }
+        } catch (err) { showError("Errore Scryfall"); }
     }
 
     function spawnTokenUI(tokenData) {
         const tokenUI = createCardUI(tokenData, 'field');
         tokenUI.classList.add('token');
-        
         const isCreature = tokenData.type_line.toLowerCase().includes("creature");
         const zoneId = isCreature ? 'field-creatures' : 'field-others';
-        
         document.getElementById(zoneId).appendChild(tokenUI);
         showError(`Creato ${tokenData.name}`);
         updateManaTracker();
@@ -228,15 +215,12 @@
 
     function updateTokenMenuUI() {
         const container = document.getElementById('dynamic-token-list');
-        if (!container) return; // Sicurezza
         container.innerHTML = '';
-        
         const keys = Object.keys(currentDeckTokens);
         if (keys.length === 0) {
-            container.innerHTML = '<p style="grid-column:1/3; color:#555; font-size:10px;">Usa la ricerca sopra per generare token</p>';
+            container.innerHTML = '<p style="grid-column:1/3; color:#555; font-size:10px;">Nessun token suggerito</p>';
             return;
         }
-
         keys.forEach(key => {
             const t = currentDeckTokens[key];
             const btn = document.createElement('button');
@@ -250,12 +234,10 @@
 
     function toggleTokenMenu() { 
         document.getElementById('token-overlay').style.display = 'flex'; 
-        updateTokenMenuUI(); // Aggiorna la lista ogni volta che apri
+        updateTokenMenuUI();
     }
 
-    function closeTokenMenu() { 
-        document.getElementById('token-overlay').style.display = 'none'; 
-    }
+    function closeTokenMenu() { document.getElementById('token-overlay').style.display = 'none'; }
 
     function createCardUI(cardData, loc) {
         const img = document.createElement('img');
@@ -263,13 +245,11 @@
         img.className = 'card ' + (loc === 'hand' ? 'hand-card' : '');
         img.draggable = true;
         img.dataset.cardData = JSON.stringify(cardData);
-        
         img.onclick = () => {
             const p = img.parentElement.id;
             if (p === 'hand' || p === 'commander-zone') playCard(cardData, p);
             else { img.classList.toggle('tapped'); updateManaTracker(); }
         };
-
         img.ondragstart = () => draggedCardData = cardData;
         img.ondragend = () => document.querySelectorAll('.zone').forEach(z => z.classList.remove('drag-over'));
         return img;
@@ -278,14 +258,12 @@
     function playCard(cardData, from) {
         const type = (cardData.type_line || "").toLowerCase();
         const isLand = type.includes('land');
-        
         if (!isLand && from !== 'field') {
             const cost = getManaDetails(cardData.mana_cost);
             const untapped = Array.from(document.querySelectorAll('#field-lands .card:not(.tapped)'));
-            if (untapped.length < (cost.generic + cost.colors.length)) { showError("Mana insufficiente!"); return; }
+            if (untapped.length < (cost.generic + cost.colors.length)) { showError("Mana!"); return; }
             for (let i = 0; i < (cost.generic + cost.colors.length); i++) untapped[i].classList.add('tapped');
         }
-
         if (from === 'hand') hand = hand.filter(c => c.scryfall_id !== cardData.scryfall_id);
         const zoneId = isLand ? 'field-lands' : (type.includes('creature') ? 'field-creatures' : 'field-others');
         document.getElementById(zoneId).appendChild(createCardUI(cardData, 'field'));
@@ -298,13 +276,10 @@
         document.getElementById('count-lib').innerText = deck.length;
         document.getElementById('count-grave').innerText = grave.length;
         document.getElementById('count-exile').innerText = exile.length;
-        
         const gv = document.getElementById('graveyard-visual');
         gv.innerHTML = grave.length > 0 ? `<img src="${grave[grave.length-1].image_uris?.normal}" style="width:100%">` : '';
-        
         const ev = document.getElementById('exile-visual');
         ev.innerHTML = exile.length > 0 ? `<img src="${exile[exile.length-1].image_uris?.normal}" style="width:100%">` : '';
-        
         updateManaTracker();
     }
 
@@ -335,7 +310,6 @@
         hand = hand.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
         grave = grave.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
         exile = exile.filter(c => c.scryfall_id !== draggedCardData.scryfall_id);
-        
         if (z.dataset.zone === 'grave') grave.push(draggedCardData);
         else if (z.dataset.zone === 'exile') exile.push(draggedCardData);
         else if (z.id === 'hand') hand.push(draggedCardData);
@@ -343,8 +317,6 @@
         updateUI();
     }
 
-    function toggleTokenMenu() { document.getElementById('token-overlay').style.display = 'flex'; }
-    function closeTokenMenu() { document.getElementById('token-overlay').style.display = 'none'; }
     function openMulligan() { document.getElementById('mulligan-overlay').style.display = 'flex'; }
     function closeMulligan() { document.getElementById('mulligan-overlay').style.display = 'none'; }
     function executeMulligan(n) { deck.push(...hand); hand = []; shuffleDeck(false); for(let i=0; i<n; i++) if(deck.length > 0) hand.push(deck.pop()); closeMulligan(); updateUI(); }
@@ -357,10 +329,8 @@
     function openScry() {
         if (deck.length === 0) return;
         const card = deck[deck.length - 1];
-        const overlay = document.getElementById('scry-overlay');
-        overlay.style.display = 'flex';
-        const imgUrl = card.image_uris?.normal || `https://api.scryfall.com/cards/${card.scryfall_id}?format=image&version=normal`;
-        document.getElementById('scry-content').innerHTML = `<img src="${imgUrl}" style="height:450px; border-radius:20px;">`;
+        document.getElementById('scry-overlay').style.display = 'flex';
+        document.getElementById('scry-content').innerHTML = `<img src="${card.image_uris?.normal}" style="height:450px; border-radius:20px;">`;
     }
     function scryAction(pos) {
         const card = deck.pop();
